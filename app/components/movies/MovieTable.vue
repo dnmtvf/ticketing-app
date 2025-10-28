@@ -20,7 +20,7 @@
           v-for="movie in movies" 
           :key="movie.id" 
           :movie="movie" 
-          @view-sessions="emit('viewSessions', $event)"
+          @movie-select="emit('movie-select', $event)"
         />
       </tbody>
     </table>
@@ -28,18 +28,19 @@
 </template>
 
 <script setup lang="ts">
-import type { Movie } from '~/schemas'
 import MovieCard from './MovieCard.vue'
+import { useMovies } from '~/composables/useMovies'
 
-interface Props {
-  movies: Movie[]
-  pending: boolean
-  error: string | null
-}
-
-const props = defineProps<Props>()
+// Use the composable directly instead of receiving props
+const { movies, pending, error, loadMovies, refresh } = useMovies()
 
 const emit = defineEmits<{
-  viewSessions: [id: string | number]
+  'movie-select': [id: number]
 }>()
+
+// Expose methods for parent components if needed
+defineExpose({
+  loadMovies,
+  refresh
+})
 </script>

@@ -32,7 +32,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  goToSession: [id: string | number]
+  goToSession: [id: number]
 }>()
 
 const sessionsForDate = computed(() => {

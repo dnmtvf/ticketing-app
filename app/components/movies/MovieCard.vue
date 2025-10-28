@@ -14,7 +14,7 @@
     <td class="py-2">
       <button 
         class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800" 
-        @click="$emit('viewSessions', movie.id)"
+        @click="$emit('movie-select', movie.id)"
       >
         Посмотреть сеансы
       </button>
@@ -32,7 +32,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  viewSessions: [id: string | number]
+  'movie-select': [id: number]
 }>()
 
 const apiBase = computed(() => {

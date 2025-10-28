@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 import { z } from 'zod'
-import { MovieSchema, SessionSchema, type Movie, type Session } from '~/schemas'
+import { MovieSchema, SessionSchema, CinemaSchema, type Movie, type Session } from '~/schemas'
 import MovieDetails from '~/components/movies/MovieDetails.vue'
 import SessionGroup from '~/components/movies/SessionGroup.vue'
 import { groupSessionsByDate } from '~/utils/transformers'
@@ -77,5 +77,10 @@ const dates = computed(() => {
   return Object.keys(grouped).sort()
 })
 
-const goToSession = (sessionId: string | number) => navigateTo(`/sessions/${sessionId}`)
+const goToSession = (sessionId: number) => {
+  return navigateTo({
+    name: 'sessions-id',
+    params: { id: String(sessionId) }
+  })
+}
 </script>

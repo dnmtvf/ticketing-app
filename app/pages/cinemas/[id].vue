@@ -41,7 +41,7 @@ try {
   pending.value = false
 }
 
-const goToSession = (sessionId: string | number) => navigateTo(`/sessions/${sessionId}`)
+const goToSession = (sessionId: number) => navigateTo(`/sessions/${sessionId}`)
 </script>
 
 <template>

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const MovieSchema = z.object({
-  id: z.union([z.number(), z.string()]),
+  id: z.number(),
   title: z.string().optional(),
   name: z.string().optional(),
   posterImage: z.string().optional(),  // API field name
@@ -16,15 +16,15 @@ export const MovieSchema = z.object({
 })
 
 export const CinemaSchema = z.object({
-  id: z.union([z.number(), z.string()]),
+  id: z.number(),
   name: z.string(),
   address: z.string().optional()
 })
 
 export const SessionSchema = z.object({
-  id: z.union([z.number(), z.string()]),
-  movieId: z.union([z.number(), z.string()]).optional(),
-  cinemaId: z.union([z.number(), z.string()]).optional(),
+  id: z.number(),
+  movieId: z.number().optional(),
+  cinemaId: z.number().optional(),
   startTime: z.string().optional(),
   startAt: z.string().optional(),
   start_time: z.string().optional(),
@@ -35,7 +35,7 @@ export const SessionSchema = z.object({
 })
 
 export const SessionDetailSchema = z.object({
-  id: z.union([z.number(), z.string()]),
+  id: z.number(),
   movie: MovieSchema.optional(),
   movieName: z.string().optional(),
   cinema: CinemaSchema.optional(),
@@ -54,9 +54,9 @@ export const SessionDetailSchema = z.object({
 })
 
 export const BookingSchema = z.object({
-  id: z.union([z.number(), z.string()]),
-  movieSessionId: z.union([z.number(), z.string()]).optional(),
-  sessionId: z.union([z.number(), z.string()]).optional(),
+  id: z.number(),
+  movieSessionId: z.number().optional(),
+  sessionId: z.number().optional(),
   isPaid: z.boolean().optional(),
   movie: MovieSchema.optional(),
   movieName: z.string().optional(),

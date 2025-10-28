@@ -16,7 +16,7 @@ try {
 } finally {
   state.pending = false
 }
-const viewSessions = (id: string | number) => navigateTo(`/cinemas/${id}`)
+const viewSessions = (id: number) => navigateTo(`/cinemas/${id}`)
 </script>
 
 <template>
