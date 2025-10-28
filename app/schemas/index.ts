@@ -4,10 +4,13 @@ export const MovieSchema = z.object({
   id: z.union([z.number(), z.string()]),
   title: z.string().optional(),
   name: z.string().optional(),
-  posterUrl: z.string().url().optional(),
+  posterImage: z.string().optional(),  // API field name
+  posterUrl: z.string().url().optional(),  // For backward compatibility
+  posterFullUrl: z.string().url().optional(), // Full image URL
   description: z.string().optional(),
   duration: z.string().optional(),
   runtime: z.string().optional(),
+  lengthMinutes: z.number().optional(),  // API field name
   rating: z.union([z.number(), z.string()]).optional(),
   year: z.union([z.number(), z.string()]).optional()
 })

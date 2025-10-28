@@ -27,4 +27,3 @@ const onLogout = async () => {
 }
 </script>
 
-<style scoped></style>

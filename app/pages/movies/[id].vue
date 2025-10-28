@@ -1,6 +1,29 @@
+<template>
+  <article aria-labelledby="movie-title">
+    <h1 id="movie-title" class="text-2xl font-semibold mb-4">Фильм</h1>
+    <div v-if="pending">Загрузка…</div>
+    <div v-else-if="error">{{ error }}</div>
+    <div v-else>
+      <MovieDetails :movie="movie" />
+      
+      <div v-for="date in dates" :key="date">
+        <SessionGroup 
+          :date="date" 
+          :sessions="sessions"
+          @go-to-session="goToSession"
+        />
+      </div>
+    </div>
+  </article>
+</template>
+
 <script setup lang="ts">
 import { z } from 'zod'
 import { MovieSchema, SessionSchema, type Movie, type Session } from '~/schemas'
+import MovieDetails from '~/components/movies/MovieDetails.vue'
+import SessionGroup from '~/components/movies/SessionGroup.vue'
+import { groupSessionsByDate } from '~/utils/transformers'
+
 const { $api } = useNuxtApp()
 const route = useRoute()
 const id = String(route.params.id)
@@ -10,67 +33,49 @@ const sessions = ref<Session[]>([])
 const pending = ref(true)
 const error = ref<string | null>(null)
 
-const groupByDate = (list: Session[]) => {
-  const map: Record<string, Session[]> = {}
-  for (const s of list) {
-    const d = (s.startAt || s.startTime || s.start_time || s.date || '').slice(0, 10)
-    if (!map[d]) map[d] = []
-    map[d].push(s)
-  }
-  return map
-}
-
 try {
-  const [m, sess] = await Promise.all([
-    $api(`/movies/${id}`).catch(() => null),
-    $api(`/movies/${id}/sessions`)
-  ])
-  if (m) {
-    const pm = MovieSchema.safeParse(m)
-    if (pm.success) movie.value = pm.data
+  // Get movie details from movies list (since /movies/{id} doesn't exist)
+  const movies = await $api('/movies')
+  const moviesArray = z.array(MovieSchema).safeParse(movies)
+  
+  if (moviesArray.success) {
+    // Find the movie in the list
+    movie.value = moviesArray.data.find(m => String(m.id) === id) || null
   }
+  
+  // Get sessions and cinemas data
+  const [sess, cinemas] = await Promise.all([
+    $api(`/movies/${id}/sessions`),
+    $api('/cinemas')
+  ])
+  
   const ps = z.array(SessionSchema).safeParse(sess)
-  if (ps.success) sessions.value = ps.data
-  else error.value = 'Ошибка загрузки'
+  const cs = z.array(CinemaSchema).safeParse(cinemas)
+  
+  if (ps.success && cs.success) {
+    // Join sessions with cinema data to get cinema names
+    sessions.value = ps.data.map(session => {
+      const cinema = cs.data.find(c => String(c.id) === String(session.cinemaId))
+      return {
+        ...session,
+        cinemaName: cinema?.name || `Кинотеатр ${session.cinemaId}`,
+        cinema: cinema
+      }
+    })
+  } else {
+    error.value = 'Ошибка загрузки сеансов'
+  }
 } catch {
   error.value = 'Ошибка загрузки'
 } finally {
   pending.value = false
 }
 
+// Extract dates for rendering
+const dates = computed(() => {
+  const grouped = groupSessionsByDate(sessions.value)
+  return Object.keys(grouped).sort()
+})
+
 const goToSession = (sessionId: string | number) => navigateTo(`/sessions/${sessionId}`)
 </script>
-
-<template>
-  <article aria-labelledby="movie-title">
-    <h1 id="movie-title" class="text-2xl font-semibold mb-4">Фильм</h1>
-    <div v-if="pending">Загрузка…</div>
-    <div v-else-if="error">{{ error }}</div>
-    <div v-else>
-      <section v-if="movie" class="flex gap-4 mb-6">
-        <img :src="movie.posterUrl" alt="" class="w-[140px] h-[200px] object-cover bg-zinc-800" />
-        <div class="grid gap-1">
-          <h2 class="text-xl font-medium">{{ movie.title || movie.name }}</h2>
-          <p class="text-zinc-300">{{ movie.description }}</p>
-          <div>Год: {{ movie.year }}</div>
-          <div>Продолжительность: {{ movie.duration }}</div>
-          <div>Рейтинг: {{ movie.rating }}</div>
-        </div>
-      </section>
-
-      <section v-for="(list, date) in groupByDate(sessions)" :key="date" class="border-t border-zinc-700 pt-3 mt-3">
-        <h3 class="font-semibold mb-2">{{ date }}</h3>
-        <div v-for="cinema in [...new Set(list.map(s=>s.cinemaName||s.cinema?.name))]" :key="cinema" class="flex items-center gap-3 py-2">
-          <div class="min-w-48">{{ cinema }}</div>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="s in list.filter(x => (x.cinemaName||x.cinema?.name)===cinema)" :key="s.id" @click="goToSession(s.id)" class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800">
-              {{ (s.startAt || s.startTime || s.start_time || '').slice(11,16) }}
-            </button>
-          </div>
-        </div>
-      </section>
-    </div>
-  </article>
-</template>
-
-<style scoped></style>

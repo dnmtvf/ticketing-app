@@ -21,14 +21,17 @@ const groupByDate = (list: Session[]) => {
 }
 
 try {
-  const [c, sess] = await Promise.all([
-    $api(`/cinemas/${id}`).catch(() => null),
-    $api(`/cinemas/${id}/sessions`).catch(() => $api(`/cinemas/${id}/session`))
-  ])
-  if (c) {
-    const pc = CinemaSchema.safeParse(c)
-    if (pc.success) cinema.value = pc.data
+  // Get cinema details from cinemas list (since /cinemas/{id} doesn't exist)
+  const cinemas = await $api('/cinemas')
+  const cinemasArray = z.array(CinemaSchema).safeParse(cinemas)
+  
+  if (cinemasArray.success) {
+    // Find the cinema in the list
+    cinema.value = cinemasArray.data.find(c => String(c.id) === id) || null
   }
+  
+  // Get sessions for this cinema
+  const sess = await $api(`/cinemas/${id}/sessions`).catch(() => $api(`/cinemas/${id}/session`))
   const ps = z.array(SessionSchema).safeParse(sess)
   if (ps.success) sessions.value = ps.data
   else error.value = 'Ошибка загрузки'
@@ -64,4 +67,3 @@ const goToSession = (sessionId: string | number) => navigateTo(`/sessions/${sess
   </article>
 </template>
 
-<style scoped></style>

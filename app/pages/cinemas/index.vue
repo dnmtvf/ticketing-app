@@ -43,4 +43,3 @@ const viewSessions = (id: string | number) => navigateTo(`/cinemas/${id}`)
   </section>
 </template>
 
-<style scoped></style>

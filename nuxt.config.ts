@@ -18,5 +18,9 @@ export default defineNuxtConfig({
       // Default API base falls back to backend's default port; override via env if different
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3022'
     }
+  },
+  // Disable font providers for faster development
+  ui: {
+    fonts: false
   }
 })
