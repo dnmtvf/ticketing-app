@@ -11,7 +11,7 @@ try {
   } else {
     state.cinemas = parsed.data
   }
-} catch (e) {
+} catch {
   state.error = 'Ошибка загрузки кинотеатров'
 } finally {
   state.pending = false

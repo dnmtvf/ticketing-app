@@ -2,7 +2,6 @@ type LoginPayload = { username: string; password: string }
 type RegisterPayload = { username: string; password: string; passwordConfirmation: string }
 
 export const useAuth = () => {
-  const { $api } = useNuxtApp()
   const loggedIn = useState<boolean>('auth:loggedIn', () => false)
   const username = useState<string | null>('auth:username', () => null)
   const loading = useState<boolean>('auth:loading', () => false)
@@ -16,7 +15,7 @@ export const useAuth = () => {
       loggedIn.value = true
       username.value = payload.username
       return true
-    } catch (e) {
+    } catch {
       error.value = 'Неверный логин или пароль. Проверьте введенные данные и попробуйте снова'
       return false
     } finally {
@@ -32,7 +31,7 @@ export const useAuth = () => {
       loggedIn.value = true
       username.value = payload.username
       return true
-    } catch (e) {
+    } catch {
       error.value = 'Ошибка регистрации'
       return false
     } finally {

@@ -12,7 +12,7 @@ try {
   } else {
     state.movies = parsed.data
   }
-} catch (e) {
+} catch {
   state.error = 'Ошибка загрузки фильмов'
 } finally {
   state.pending = false

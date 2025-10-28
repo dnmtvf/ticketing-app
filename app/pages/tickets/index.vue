@@ -26,7 +26,7 @@ const load = async () => {
     settings.value = ps.success ? ps.data : null
     const pb = z.array(BookingSchema).safeParse(b)
     bookings.value = pb.success ? pb.data : []
-  } catch (e) {
+  } catch {
     error.value = 'Ошибка загрузки'
   } finally {
     pending.value = false
@@ -68,7 +68,7 @@ const pay = async (b: BookingLike) => {
     await $api(`/bookings/${b.id}/payments`, { method: 'POST' })
     toast.add({ title: 'Билет оплачен' })
     await load()
-  } catch (e) {
+  } catch {
     toast.add({ title: 'Не удалось оплатить билет', color: 'rose' })
   }
 }

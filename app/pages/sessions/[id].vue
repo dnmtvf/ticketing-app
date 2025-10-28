@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { z } from 'zod'
 import { SessionDetailSchema, type SessionDetail } from '~/schemas'
 import { normalizeBooked, seatId, toggleSeat } from '~/utils/seats'
 const { $api } = useNuxtApp()
@@ -18,7 +17,7 @@ try {
   const parsed = SessionDetailSchema.safeParse(d)
   if (parsed.success) detail.value = parsed.data
   else throw new Error('Schema mismatch')
-} catch (e) {
+} catch {
   error.value = 'Ошибка загрузки сеанса'
 } finally {
   pending.value = false
@@ -68,7 +67,7 @@ const book = async () => {
     await $api(`/movieSessions/${id}/bookings`, { method: 'POST', body: { seats } })
     toast.add({ title: 'Места забронированы' })
     await navigateTo('/tickets')
-  } catch (e) {
+  } catch {
     // Conflict or validation error: refresh seat map
     try {
       const refreshed = await $api(`/movieSessions/${id}`)

@@ -32,7 +32,7 @@ try {
   const ps = z.array(SessionSchema).safeParse(sess)
   if (ps.success) sessions.value = ps.data
   else error.value = 'Ошибка загрузки'
-} catch (e) {
+} catch {
   error.value = 'Ошибка загрузки'
 } finally {
   pending.value = false
