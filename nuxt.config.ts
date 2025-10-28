@@ -4,9 +4,13 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/ui', '@nuxtjs/tailwindcss', '@nuxt/eslint'],
   css: ['~/assets/css/tailwind.css'],
+  devServer: {
+    port: 8282
+  },
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8282'
+      // Default API base falls back to backend's default port; override via env if different
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3022'
     }
   }
 })
