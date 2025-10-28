@@ -12,7 +12,7 @@ export const useAuth = () => {
     loading.value = true
     error.value = null
     try {
-      await $api('/login', { method: 'POST', body: payload })
+      await $fetch('/api/auth/login', { method: 'POST', body: { username: payload.username, password: payload.password } })
       loggedIn.value = true
       username.value = payload.username
       return true
@@ -28,7 +28,7 @@ export const useAuth = () => {
     loading.value = true
     error.value = null
     try {
-      await $api('/register', { method: 'POST', body: payload })
+      await $fetch('/api/auth/register', { method: 'POST', body: { username: payload.username, password: payload.password } })
       loggedIn.value = true
       username.value = payload.username
       return true
@@ -43,8 +43,7 @@ export const useAuth = () => {
   const logout = async () => {
     loading.value = true
     try {
-      // Best-effort logout if endpoint exists
-      try { await $api('/logout', { method: 'POST' }) } catch {}
+      try { await $fetch('/api/auth/logout', { method: 'POST' }) } catch {}
     } finally {
       loggedIn.value = false
       username.value = null
@@ -55,8 +54,8 @@ export const useAuth = () => {
   // Verify session using a cheap authenticated call
   const refresh = async () => {
     try {
-      await $api('/me/bookings', { method: 'GET' })
-      loggedIn.value = true
+      const res = await $fetch<{ loggedIn: boolean }>('/api/auth/session')
+      loggedIn.value = Boolean(res?.loggedIn)
       return true
     } catch {
       loggedIn.value = false

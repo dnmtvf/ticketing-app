@@ -1,11 +1,7 @@
 export default defineNuxtPlugin(() => {
-  const config = useRuntimeConfig()
   const api = $fetch.create({
-    baseURL: config.public.apiBase,
+    baseURL: '/api/proxy',
     credentials: 'include',
   })
-
-  return {
-    provide: { api }
-  }
+  return { provide: { api } }
 })
