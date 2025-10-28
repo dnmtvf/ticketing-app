@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { z } from 'zod'
+import { CinemaSchema, SessionSchema } from '~/app/schemas'
 const { $api } = useNuxtApp()
 const route = useRoute()
 const id = route.params.id as string
@@ -23,8 +25,12 @@ try {
     $api(`/cinemas/${id}`).catch(() => null),
     $api(`/cinemas/${id}/sessions`).catch(() => $api(`/cinemas/${id}/session`))
   ])
-  cinema.value = c
-  sessions.value = Array.isArray(sess) ? sess : []
+  if (c) {
+    const pc = CinemaSchema.safeParse(c)
+    cinema.value = pc.success ? pc.data as any : c
+  }
+  const ps = z.array(SessionSchema).safeParse(sess)
+  sessions.value = ps.success ? ps.data as any[] : (Array.isArray(sess) ? sess : [])
 } catch (e) {
   error.value = 'Ошибка загрузки'
 } finally {

@@ -1,24 +1,18 @@
 <template>
   <section aria-labelledby="register-title" class="max-w-md">
     <h1 id="register-title" class="text-2xl font-semibold mb-4">Регистрация</h1>
-    <form @submit.prevent="onSubmit" class="grid gap-3">
-      <label class="grid gap-1">
-        <span class="text-sm text-zinc-300">Логин</span>
-        <input v-model.trim="form.username" type="text" class="px-3 py-2 rounded border border-zinc-700 bg-zinc-900" placeholder="Введите логин" aria-required="true" />
-        <span v-if="v$.form.username.$error" class="text-rose-400 text-xs">{{ usernameError }}</span>
-      </label>
-      <label class="grid gap-1">
-        <span class="text-sm text-zinc-300">Пароль</span>
-        <input v-model="form.password" type="password" class="px-3 py-2 rounded border border-zinc-700 bg-zinc-900" placeholder="Введите пароль" aria-required="true" />
-        <span v-if="v$.form.password.$error" class="text-rose-400 text-xs">{{ passwordError }}</span>
-      </label>
-      <label class="grid gap-1">
-        <span class="text-sm text-zinc-300">Пароль</span>
-        <input v-model="form.passwordConfirmation" type="password" class="px-3 py-2 rounded border border-zinc-700 bg-zinc-900" placeholder="Подтвердите пароль" aria-required="true" />
-        <span v-if="v$.form.passwordConfirmation.$error" class="text-rose-400 text-xs">Пароль не совпадает</span>
-      </label>
-      <button :disabled="auth.loading || v$.$invalid" type="submit" class="justify-self-start mt-2 inline-flex items-center gap-2 px-4 py-2 rounded bg-sky-600 hover:bg-sky-500 disabled:opacity-50">Зарегистрироваться</button>
-    </form>
+    <UForm :state="form" @submit="onSubmit" class="grid gap-3">
+      <UFormGroup name="username" label="Логин" :error="v$.form.username.$error ? usernameError : ''">
+        <UInput v-model="form.username" placeholder="Введите логин" />
+      </UFormGroup>
+      <UFormGroup name="password" label="Пароль" :error="v$.form.password.$error ? passwordError : ''">
+        <UInput v-model="form.password" type="password" placeholder="Введите пароль" />
+      </UFormGroup>
+      <UFormGroup name="passwordConfirmation" label="Пароль" :error="v$.form.passwordConfirmation.$error ? 'Пароль не совпадает' : ''">
+        <UInput v-model="form.passwordConfirmation" type="password" placeholder="Подтвердите пароль" />
+      </UFormGroup>
+      <UButton :loading="auth.loading" :disabled="v$.$invalid" type="submit">Зарегистрироваться</UButton>
+    </UForm>
     <p class="mt-6 text-sm text-zinc-300">
       Если вы уже зарегистрированы <NuxtLink class="text-sky-400 underline" to="/login">войдите</NuxtLink>
     </p>
@@ -61,7 +55,11 @@ const onSubmit = async () => {
     password: form.password,
     passwordConfirmation: form.passwordConfirmation
   })
-  if (ok) await navigateTo('/tickets')
+  if (ok) {
+    const toast = useToast()
+    toast.add({ title: 'Регистрация выполнена' })
+    await navigateTo('/tickets')
+  }
 }
 </script>
 

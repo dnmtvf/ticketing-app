@@ -1,8 +1,19 @@
 <script setup lang="ts">
+import { z } from 'zod'
+import { MovieSchema } from '~/app/schemas'
 const { $api } = useNuxtApp()
-const { data, pending, error } = await useAsyncData('movies', () => $api('/movies'))
 
-const movies = computed(() => (data.value as any[]) || [])
+const state = reactive({ pending: true, error: '' as string, movies: [] as any[] })
+try {
+  const res = await $api('/movies')
+  const parsed = z.array(MovieSchema).safeParse(res)
+  if (!parsed.success) throw new Error('Schema mismatch')
+  state.movies = parsed.data
+} catch (e) {
+  state.error = 'Ошибка загрузки фильмов'
+} finally {
+  state.pending = false
+}
 
 const viewSessions = (id: string | number) => navigateTo(`/movies/${id}`)
 </script>
@@ -10,8 +21,8 @@ const viewSessions = (id: string | number) => navigateTo(`/movies/${id}`)
 <template>
   <section aria-labelledby="movies-title">
     <h1 id="movies-title" class="text-2xl font-semibold mb-4">Фильмы / Главная</h1>
-    <div v-if="pending">Загрузка…</div>
-    <div v-else-if="error">Ошибка загрузки фильмов</div>
+    <div v-if="state.pending">Загрузка…</div>
+    <div v-else-if="state.error">{{ state.error }}</div>
     <table v-else class="w-full border-collapse">
       <thead class="text-left text-zinc-300">
         <tr class="border-b border-zinc-700">
@@ -23,7 +34,7 @@ const viewSessions = (id: string | number) => navigateTo(`/movies/${id}`)
         </tr>
       </thead>
       <tbody>
-        <tr v-for="m in movies" :key="m.id" class="border-b border-zinc-800">
+        <tr v-for="m in state.movies" :key="m.id" class="border-b border-zinc-800">
           <td class="py-2"><img :src="m.posterUrl" alt="" class="w-12 h-12 object-cover" /></td>
           <td class="py-2">{{ m.title || m.name }}</td>
           <td class="py-2">{{ m.duration || m.runtime }}</td>

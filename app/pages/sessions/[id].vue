@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { z } from 'zod'
+import { SessionDetailSchema } from '~/app/schemas'
 import { normalizeBooked, seatId, toggleSeat } from '~/utils/seats'
 const { $api } = useNuxtApp()
 const auth = useAuth()
@@ -13,7 +15,8 @@ const selected = ref<string[]>([])
 
 try {
   const d = await $api(`/movieSessions/${id}`)
-  detail.value = d
+  const parsed = SessionDetailSchema.safeParse(d)
+  detail.value = parsed.success ? parsed.data as any : d
 } catch (e) {
   error.value = 'Ошибка загрузки сеанса'
 } finally {
@@ -49,13 +52,15 @@ const toggle = (r: number, c: number) => {
 const book = async () => {
   if (!auth.loggedIn.value) return navigateTo({ path: '/login', query: { redirect: route.fullPath } })
   if (!selected.value.length) return
+  const toast = useToast()
   try {
     await $api(`/movieSessions/${id}`, { method: 'POST', body: { seats: selected.value } })
+    toast.add({ title: 'Места забронированы' })
     await navigateTo('/tickets')
   } catch (e: any) {
     // Conflict or validation error: refresh seat map
     try { detail.value = await $api(`/movieSessions/${id}`) } catch {}
-    alert('Не удалось забронировать выбранные места. Попробуйте еще раз.')
+    toast.add({ title: 'Не удалось забронировать места', color: 'rose' })
   }
 }
 </script>
@@ -90,7 +95,7 @@ const book = async () => {
       </div>
 
       <div>
-        <button @click="book" class="px-4 py-2 rounded bg-sky-600 hover:bg-sky-500">Забронировать</button>
+        <UButton color="primary" @click="book">Забронировать</UButton>
       </div>
     </div>
   </section>

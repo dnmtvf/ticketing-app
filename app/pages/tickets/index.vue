@@ -2,6 +2,8 @@
 import { remainingSeconds } from '~/utils/time'
 definePageMeta({ middleware: 'auth' })
 
+import { z } from 'zod'
+import { SettingsSchema, BookingSchema } from '~/app/schemas'
 const { $api } = useNuxtApp()
 
 const settings = ref<{ paymentTimeoutSeconds: number } | null>(null)
@@ -16,8 +18,10 @@ const load = async () => {
       $api('/settings'),
       $api('/me/bookings')
     ])
-    settings.value = s
-    bookings.value = Array.isArray(b) ? b : []
+    const ps = SettingsSchema.safeParse(s)
+    settings.value = ps.success ? ps.data as any : s
+    const pb = z.array(BookingSchema).safeParse(b)
+    bookings.value = pb.success ? pb.data as any[] : (Array.isArray(b) ? b : [])
   } catch (e) {
     error.value = 'Ошибка загрузки'
   } finally {
@@ -44,11 +48,13 @@ watchEffect(() => {
 })
 
 const pay = async (b: any) => {
+  const toast = useToast()
   try {
     await $api(`/bookings/${b.id}/payments`, { method: 'POST' })
+    toast.add({ title: 'Билет оплачен' })
     await load()
   } catch (e) {
-    alert('Не удалось оплатить билет. Попробуйте снова.')
+    toast.add({ title: 'Не удалось оплатить билет', color: 'rose' })
   }
 }
 
@@ -74,7 +80,7 @@ const past = computed(() => bookings.value.filter(b => b.status === 'past' || b.
             <div>Ряд {{ b.seats?.[0]?.row || '' }}, место {{ b.seats?.[0]?.col || '' }}</div>
           </div>
           <div class="grow" />
-          <button class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800" @click="pay(b)">Оплатить</button>
+          <UButton variant="outline" @click="pay(b)">Оплатить</UButton>
           <div>Осталось {{ Math.floor(remainingSec(b)/60) }}:{{ (remainingSec(b)%60).toString().padStart(2,'0') }}</div>
         </div>
       </section>

@@ -1,75 +1,31 @@
-# Nuxt Minimal Starter
+# Ticketing App (Nuxt 4)
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Cinema ticket booking frontend (desktop‑first) built with Nuxt 4 + TypeScript.
+
+## Requirements
+- Node 18+
+- pnpm 10+
 
 ## Setup
-
-Make sure to install dependencies:
-
 ```bash
-# npm
-npm install
-
-# pnpm
 pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
+pnpm run postinstall    # generates .nuxt and ESLint flat config
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
+Set API base (defaults to http://localhost:8282):
 ```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
+export NUXT_PUBLIC_API_BASE=http://localhost:8282
 ```
 
-## Production
+## Scripts
+- Dev server: `pnpm dev`
+- Build: `pnpm build`
+- Preview: `pnpm preview`
+- Lint: `pnpm lint`
+- Tests: `pnpm test` (Vitest)
 
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## Tech
+- Nuxt 4, TypeScript, Tailwind CSS, Nuxt UI (UForm, UButton, Toast)
+- Auth via cookies (credentials: include)
+- Zod schemas validate API responses
+- Vitest unit tests (auth validation, seat selection, countdown)
