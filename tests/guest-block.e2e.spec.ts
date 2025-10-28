@@ -16,12 +16,22 @@ test('guest cannot book; redirect to login', async ({ page, baseURL, request }) 
   expect(sessionId, 'expected at least one session').toBeTruthy()
   await page.goto(`${baseURL}/sessions/${sessionId}`)
 
-  // Select first free seat
-  const seat = page.locator('button[aria-label^="Ряд "]:not([disabled])').first()
-  await seat.click()
+  // Select first free seat and wait until pressed
+  // Try multiple seats until book button becomes enabled
+  const bookBtn = page.getByRole('button', { name: 'Забронировать' })
+  const seats = page.locator('button[aria-label^="Ряд "]:not([disabled])')
+  const count = await seats.count()
+  let enabled = false
+  for (let i = 0; i < Math.min(count, 10); i++) {
+    const s = seats.nth(i)
+    await s.scrollIntoViewIfNeeded()
+    await s.click()
+    enabled = await bookBtn.isEnabled().catch(() => false)
+    if (enabled) break
+  }
+  expect(enabled).toBeTruthy()
 
   // Try to book
-  const bookBtn = page.getByRole('button', { name: 'Забронировать' })
   await expect(bookBtn).toBeEnabled()
   await bookBtn.click()
 

@@ -1,27 +1,126 @@
 # Page snapshot
 
 ```yaml
-- generic [active] [ref=e1]:
-  - generic [ref=e4]:
-    - heading "404" [level=1] [ref=e5]
-    - heading "Not Found" [level=2] [ref=e6]
-    - paragraph [ref=e7]: "[GET] \"/_nuxt/builds/meta/dev.json\": 404 Not Found"
-    - link "Go back home" [ref=e9] [cursor=pointer]:
-      - /url: /
-  - generic:
-    - img
-  - generic:
-    - generic:
-      - generic:
-        - button "Go to parent" [disabled]
-        - button "Open in editor"
-        - button "Close"
-  - generic [ref=e10]:
-    - button "Toggle Nuxt DevTools" [ref=e11] [cursor=pointer]:
-      - img [ref=e12]
-    - generic "App load time" [ref=e15]:
-      - generic [ref=e16]: "1.4"
-      - generic [ref=e17]: s
-    - button "Toggle Component Inspector" [ref=e19] [cursor=pointer]:
-      - img [ref=e20]
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - navigation "Основная навигация" [ref=e5]:
+      - list [ref=e6]:
+        - listitem [ref=e7]:
+          - link "Фильмы" [ref=e8] [cursor=pointer]:
+            - /url: /movies
+        - listitem [ref=e9]:
+          - link "Кинотеатры" [ref=e10] [cursor=pointer]:
+            - /url: /cinemas
+        - listitem [ref=e11]:
+          - link "Мои билеты" [ref=e12] [cursor=pointer]:
+            - /url: /tickets
+        - listitem [ref=e13]:
+          - link "Вход" [ref=e14] [cursor=pointer]:
+            - /url: /login
+  - main [ref=e15]:
+    - region "Сеанс" [ref=e16]:
+      - heading "Сеанс" [level=1] [ref=e17]
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]: "Фильм:"
+          - generic [ref=e21]: "Кинотеатр:"
+          - generic [ref=e22]: "Время: 2025-10-28 07:00"
+        - generic [ref=e23]:
+          - generic [ref=e24]:
+            - generic [ref=e25]: ряд 1
+            - button "Ряд 1, место 1" [ref=e26]
+            - button "Ряд 1, место 2" [disabled] [ref=e27]
+            - button "Ряд 1, место 3" [ref=e28]
+            - button "Ряд 1, место 4" [ref=e29]
+            - button "Ряд 1, место 5" [ref=e30]
+            - button "Ряд 1, место 6" [ref=e31]
+            - button "Ряд 1, место 7" [ref=e32]
+            - button "Ряд 1, место 8" [ref=e33]
+            - button "Ряд 1, место 9" [ref=e34]
+            - button "Ряд 1, место 10" [ref=e35]
+          - generic [ref=e36]:
+            - generic [ref=e37]: ряд 2
+            - button "Ряд 2, место 1" [active] [ref=e38]
+            - button "Ряд 2, место 2" [ref=e39]
+            - button "Ряд 2, место 3" [ref=e40]
+            - button "Ряд 2, место 4" [ref=e41]
+            - button "Ряд 2, место 5" [ref=e42]
+            - button "Ряд 2, место 6" [ref=e43]
+            - button "Ряд 2, место 7" [ref=e44]
+            - button "Ряд 2, место 8" [ref=e45]
+            - button "Ряд 2, место 9" [ref=e46]
+            - button "Ряд 2, место 10" [ref=e47]
+          - generic [ref=e48]:
+            - generic [ref=e49]: ряд 3
+            - button "Ряд 3, место 1" [ref=e50]
+            - button "Ряд 3, место 2" [ref=e51]
+            - button "Ряд 3, место 3" [ref=e52]
+            - button "Ряд 3, место 4" [ref=e53]
+            - button "Ряд 3, место 5" [ref=e54]
+            - button "Ряд 3, место 6" [ref=e55]
+            - button "Ряд 3, место 7" [ref=e56]
+            - button "Ряд 3, место 8" [ref=e57]
+            - button "Ряд 3, место 9" [ref=e58]
+            - button "Ряд 3, место 10" [ref=e59]
+          - generic [ref=e60]:
+            - generic [ref=e61]: ряд 4
+            - button "Ряд 4, место 1" [ref=e62]
+            - button "Ряд 4, место 2" [ref=e63]
+            - button "Ряд 4, место 3" [ref=e64]
+            - button "Ряд 4, место 4" [ref=e65]
+            - button "Ряд 4, место 5" [ref=e66]
+            - button "Ряд 4, место 6" [ref=e67]
+            - button "Ряд 4, место 7" [ref=e68]
+            - button "Ряд 4, место 8" [ref=e69]
+            - button "Ряд 4, место 9" [ref=e70]
+            - button "Ряд 4, место 10" [ref=e71]
+          - generic [ref=e72]:
+            - generic [ref=e73]: ряд 5
+            - button "Ряд 5, место 1" [ref=e74]
+            - button "Ряд 5, место 2" [ref=e75]
+            - button "Ряд 5, место 3" [ref=e76]
+            - button "Ряд 5, место 4" [ref=e77]
+            - button "Ряд 5, место 5" [ref=e78]
+            - button "Ряд 5, место 6" [ref=e79]
+            - button "Ряд 5, место 7" [ref=e80]
+            - button "Ряд 5, место 8" [ref=e81]
+            - button "Ряд 5, место 9" [ref=e82]
+            - button "Ряд 5, место 10" [ref=e83]
+          - generic [ref=e84]:
+            - generic [ref=e85]: ряд 6
+            - button "Ряд 6, место 1" [ref=e86]
+            - button "Ряд 6, место 2" [ref=e87]
+            - button "Ряд 6, место 3" [ref=e88]
+            - button "Ряд 6, место 4" [ref=e89]
+            - button "Ряд 6, место 5" [ref=e90]
+            - button "Ряд 6, место 6" [ref=e91]
+            - button "Ряд 6, место 7" [ref=e92]
+            - button "Ряд 6, место 8" [ref=e93]
+            - button "Ряд 6, место 9" [ref=e94]
+            - button "Ряд 6, место 10" [ref=e95]
+          - generic [ref=e96]:
+            - generic [ref=e97]: ряд 7
+            - button "Ряд 7, место 1" [ref=e98]
+            - button "Ряд 7, место 2" [ref=e99]
+            - button "Ряд 7, место 3" [ref=e100]
+            - button "Ряд 7, место 4" [ref=e101]
+            - button "Ряд 7, место 5" [ref=e102]
+            - button "Ряд 7, место 6" [ref=e103]
+            - button "Ряд 7, место 7" [ref=e104]
+            - button "Ряд 7, место 8" [ref=e105]
+            - button "Ряд 7, место 9" [ref=e106]
+            - button "Ряд 7, место 10" [ref=e107]
+          - generic [ref=e108]:
+            - generic [ref=e109]: ряд 8
+            - button "Ряд 8, место 1" [ref=e110]
+            - button "Ряд 8, место 2" [ref=e111]
+            - button "Ряд 8, место 3" [ref=e112]
+            - button "Ряд 8, место 4" [ref=e113]
+            - button "Ряд 8, место 5" [ref=e114]
+            - button "Ряд 8, место 6" [ref=e115]
+            - button "Ряд 8, место 7" [ref=e116]
+            - button "Ряд 8, место 8" [ref=e117]
+            - button "Ряд 8, место 9" [ref=e118]
+            - button "Ряд 8, место 10" [ref=e119]
+        - button "Забронировать" [disabled] [ref=e121]
 ```

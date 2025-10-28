@@ -31,5 +31,10 @@ These rules are mandatory for any code you add or modify in this repository. Fol
 - When the backend has inconsistent field names, write a converter that returns a well-typed object.
 - If you must temporarily relax a type, isolate it locally and follow up with a refactor.
 
-By contributing to this repo, you agree to follow these conventions. PRs that introduce `any` or type assertions without justification will be rejected.
+## Testing Philosophy
+- Do not change product implementation to satisfy end‑to‑end tests. Tests must adapt to the product, not the other way around.
+  - Prefer resilient selectors, API‑assisted navigation, storageState, and proper waiting strategies.
+  - Only change implementation when it is a genuine bug or PRD requirement.
+  - Avoid adding test‑only branches or timing hacks in runtime code.
 
+By contributing to this repo, you agree to follow these conventions. PRs that introduce `any` or type assertions without justification will be rejected.
