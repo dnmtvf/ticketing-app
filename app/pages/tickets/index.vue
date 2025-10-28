@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { remainingSeconds } from '~/utils/time'
 definePageMeta({ middleware: 'auth' })
 
 const { $api } = useNuxtApp()
@@ -31,11 +32,7 @@ let timer: any
 onMounted(() => { timer = setInterval(() => (now.value = Date.now()), 1000) })
 onBeforeUnmount(() => clearInterval(timer))
 
-const remainingSec = (b: any) => {
-  const timeout = settings.value?.paymentTimeoutSeconds ?? 0
-  const bookedAt = new Date(b.bookedAt || b.createdAt || Date.now()).getTime()
-  return Math.max(0, Math.floor((bookedAt + timeout * 1000 - now.value) / 1000))
-}
+const remainingSec = (b: any) => remainingSeconds(b.bookedAt || b.createdAt || Date.now(), settings.value?.paymentTimeoutSeconds ?? 0, now.value)
 
 watchEffect(() => {
   // auto-remove expired unpaid bookings (UI) and refetch

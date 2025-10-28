@@ -1,8 +1,7 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   const { loggedIn, refresh } = useAuth()
 
-  if (process.client) {
-    // If state unknown, try to refresh session on guarded routes
+  if (import.meta.client) {
     if (!loggedIn.value) {
       await refresh()
     }

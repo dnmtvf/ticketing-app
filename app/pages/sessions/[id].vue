@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { normalizeBooked, seatId, toggleSeat } from '~/utils/seats'
 const { $api } = useNuxtApp()
 const auth = useAuth()
 const route = useRoute()
@@ -9,16 +10,6 @@ const pending = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<string[]>([])
 
-const normalizeBooked = (booked: any): Set<string> => {
-  const set = new Set<string>()
-  if (Array.isArray(booked)) {
-    for (const b of booked) {
-      if (typeof b === 'string') set.add(b)
-      else if (b && typeof b === 'object' && 'row' in b && 'col' in b) set.add(`r${b.row}c${b.col}`)
-    }
-  }
-  return set
-}
 
 try {
   const d = await $api(`/movieSessions/${id}`)
@@ -47,16 +38,12 @@ const cols = computed(() => {
 
 const bookedSet = computed(() => normalizeBooked(detail.value?.bookedSeats))
 
-const seatId = (r: number, c: number) => `r${r}c${c}`
 const isBooked = (r: number, c: number) => bookedSet.value.has(seatId(r, c))
 const isSelected = (r: number, c: number) => selected.value.includes(seatId(r, c))
 
 const toggle = (r: number, c: number) => {
   if (isBooked(r, c)) return
-  const id = seatId(r, c)
-  const idx = selected.value.indexOf(id)
-  if (idx >= 0) selected.value.splice(idx, 1)
-  else selected.value.push(id)
+  toggleSeat(selected.value, r, c, bookedSet.value)
 }
 
 const book = async () => {
