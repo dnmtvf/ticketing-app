@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests',
+  testMatch: ['**/*.e2e.spec.ts', 'tests/seed.spec.ts'],
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
   reporter: [['list']],
@@ -21,4 +22,3 @@ export default defineConfig({
     timeout: 120_000
   }
 })
-
