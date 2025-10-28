@@ -5,7 +5,11 @@ export function normalizeBooked(booked: any): Set<string> {
   if (Array.isArray(booked)) {
     for (const b of booked) {
       if (typeof b === 'string') set.add(b)
-      else if (b && typeof b === 'object' && 'row' in b && 'col' in b) set.add(seatId(b.row, b.col))
+      else if (b && typeof b === 'object') {
+        const r = 'rowNumber' in b ? (b as any).rowNumber : (b as any).row
+        const c = 'seatNumber' in b ? (b as any).seatNumber : (b as any).col
+        if (typeof r === 'number' && typeof c === 'number') set.add(seatId(r, c))
+      }
     }
   }
   return set

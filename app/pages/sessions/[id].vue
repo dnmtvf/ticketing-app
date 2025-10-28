@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import { SessionDetailSchema } from '~/app/schemas'
-import { useSeatLock } from '~/app/composables/useSeatLock'
 import { normalizeBooked, seatId, toggleSeat } from '~/utils/seats'
 const { $api } = useNuxtApp()
 const auth = useAuth()
@@ -12,7 +11,6 @@ const detail = ref<any>(null)
 const pending = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<string[]>([])
-const lock = useSeatLock(id)
 
 
 try {
@@ -37,6 +35,7 @@ const cols = computed(() => {
   const s = detail.value?.seats
   if (!s) return 0
   if (typeof s.cols === 'number') return s.cols
+  if (typeof (s as any).seatsPerRow === 'number') return (s as any).seatsPerRow
   if (Array.isArray(s)) return Array.isArray(s[0]) ? s[0].length : 0
   return 0
 })
@@ -49,9 +48,6 @@ const isSelected = (r: number, c: number) => selected.value.includes(seatId(r, c
 const toggle = async (r: number, c: number) => {
   if (isBooked(r, c)) return
   toggleSeat(selected.value, r, c, bookedSet.value)
-  try {
-    await lock.ensure(selected.value)
-  } catch {}
 }
 
 const book = async () => {
@@ -59,7 +55,11 @@ const book = async () => {
   if (!selected.value.length) return
   const toast = useToast()
   try {
-    await $api(`/movieSessions/${id}`, { method: 'POST', body: { seats: selected.value, lockId: lock.lockId.value || undefined } })
+    const seats = selected.value.map(s => {
+      const [r, c] = s.slice(1).split('c').map(Number)
+      return { rowNumber: r, seatNumber: c }
+    })
+    await $api(`/movieSessions/${id}/bookings`, { method: 'POST', body: { seats } })
     toast.add({ title: 'Места забронированы' })
     await navigateTo('/tickets')
   } catch (e: any) {
@@ -101,9 +101,6 @@ const book = async () => {
 
       <div class="flex items-center gap-3">
         <UButton color="primary" :disabled="!selected.length" @click="book">Забронировать</UButton>
-        <div v-if="lock.remaining !== null" class="text-sm text-zinc-300">
-          Бронь удерживается {{ Math.floor((lock.remaining||0)/60) }}:{{ ((lock.remaining||0)%60).toString().padStart(2,'0') }}
-        </div>
       </div>
     </div>
   </section>
