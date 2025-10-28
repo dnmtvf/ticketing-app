@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import { SessionDetailSchema } from '~/app/schemas'
+import { useSeatLock } from '~/app/composables/useSeatLock'
 import { normalizeBooked, seatId, toggleSeat } from '~/utils/seats'
 const { $api } = useNuxtApp()
 const auth = useAuth()
@@ -11,6 +12,7 @@ const detail = ref<any>(null)
 const pending = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<string[]>([])
+const lock = useSeatLock(id)
 
 
 try {
@@ -44,9 +46,12 @@ const bookedSet = computed(() => normalizeBooked(detail.value?.bookedSeats))
 const isBooked = (r: number, c: number) => bookedSet.value.has(seatId(r, c))
 const isSelected = (r: number, c: number) => selected.value.includes(seatId(r, c))
 
-const toggle = (r: number, c: number) => {
+const toggle = async (r: number, c: number) => {
   if (isBooked(r, c)) return
   toggleSeat(selected.value, r, c, bookedSet.value)
+  try {
+    await lock.ensure(selected.value)
+  } catch {}
 }
 
 const book = async () => {
@@ -54,7 +59,7 @@ const book = async () => {
   if (!selected.value.length) return
   const toast = useToast()
   try {
-    await $api(`/movieSessions/${id}`, { method: 'POST', body: { seats: selected.value } })
+    await $api(`/movieSessions/${id}`, { method: 'POST', body: { seats: selected.value, lockId: lock.lockId.value || undefined } })
     toast.add({ title: 'Места забронированы' })
     await navigateTo('/tickets')
   } catch (e: any) {
@@ -94,8 +99,11 @@ const book = async () => {
         </div>
       </div>
 
-      <div>
-        <UButton color="primary" @click="book">Забронировать</UButton>
+      <div class="flex items-center gap-3">
+        <UButton color="primary" :disabled="!selected.length" @click="book">Забронировать</UButton>
+        <div v-if="lock.remaining !== null" class="text-sm text-zinc-300">
+          Бронь удерживается {{ Math.floor((lock.remaining||0)/60) }}:{{ ((lock.remaining||0)%60).toString().padStart(2,'0') }}
+        </div>
       </div>
     </div>
   </section>
