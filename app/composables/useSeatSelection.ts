@@ -4,27 +4,17 @@
  */
 import type { SessionDetail } from '~/schemas'
 
-interface SeatPosition {
+type SeatPosition = {
   row: number
   col: number
 }
 
-interface BookedSeat {
-  row?: number
-  col?: number
-  rowNumber?: number
-  seatNumber?: number
-}
-
 export const useSeatSelection = () => {
-  // State management for seat selection
   const selectedSeats = ref<string[]>([])
   const sessionDetail = ref<SessionDetail | null>(null)
 
-  // Generate seat ID for consistent identification
   const generateSeatId = (row: number, col: number): string => `r${row}c${col}`
 
-  // Parse seat ID back to coordinates
   const parseSeatId = (seatId: string): SeatPosition => {
     const [rowStr, colStr] = seatId.slice(1).split('c')
     return {
@@ -57,7 +47,6 @@ export const useSeatSelection = () => {
     return { rows: 0, cols: 0 }
   })
 
-  // Get set of booked seats for quick lookup
   const getBookedSeatsSet = computed(() => {
     const bookedSeats = sessionDetail.value?.bookedSeats || []
     const bookedSet = new Set<string>()
@@ -83,7 +72,6 @@ export const useSeatSelection = () => {
     return bookedSet
   })
 
-  // Check if a seat is booked
   const isSeatBooked = (row: number, col: number): boolean => {
     const seatId = generateSeatId(row, col)
     return getBookedSeatsSet.value.has(seatId)

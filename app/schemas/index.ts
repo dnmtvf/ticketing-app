@@ -2,15 +2,11 @@ import { z } from 'zod'
 
 export const MovieSchema = z.object({
   id: z.number(),
-  title: z.string().optional(),
-  name: z.string().optional(),
+  title: z.string(),
   posterImage: z.string().optional(),  // API field name
-  posterUrl: z.string().url().optional(),  // For backward compatibility
   posterFullUrl: z.string().url().optional(), // Full image URL
   description: z.string().optional(),
-  duration: z.string().optional(),
-  runtime: z.string().optional(),
-  lengthMinutes: z.number().optional(),  // API field name
+  lengthMinutes: z.number(),  // API field name - this is the actual duration field
   rating: z.union([z.number(), z.string()]).optional(),
   year: z.union([z.number(), z.string()]).optional()
 })
@@ -23,25 +19,16 @@ export const CinemaSchema = z.object({
 
 export const SessionSchema = z.object({
   id: z.number(),
-  movieId: z.number().optional(),
-  cinemaId: z.number().optional(),
-  startTime: z.string().optional(),
-  startAt: z.string().optional(),
-  start_time: z.string().optional(),
-  cinemaName: z.string().optional(),
-  movieName: z.string().optional(),
-  cinema: CinemaSchema.optional(),
-  movie: MovieSchema.optional()
+  movieId: z.number(),
+  cinemaId: z.number(),
+  startTime: z.string()
 })
 
 export const SessionDetailSchema = z.object({
   id: z.number(),
-  movie: MovieSchema.optional(),
-  movieName: z.string().optional(),
-  cinema: CinemaSchema.optional(),
-  cinemaName: z.string().optional(),
-  startTime: z.string().optional(),
-  startAt: z.string().optional(),
+  movieId: z.number(),
+  cinemaId: z.number(),
+  startTime: z.string(),
   seats: z.union([
     z.object({ rows: z.number(), cols: z.number().optional(), seatsPerRow: z.number().optional() }),
     z.array(z.array(z.unknown()))
@@ -55,23 +42,19 @@ export const SessionDetailSchema = z.object({
 
 export const BookingSchema = z.object({
   id: z.number(),
-  movieSessionId: z.number().optional(),
-  sessionId: z.number().optional(),
-  isPaid: z.boolean().optional(),
-  movie: MovieSchema.optional(),
-  movieName: z.string().optional(),
-  cinema: CinemaSchema.optional(),
-  cinemaName: z.string().optional(),
-  startAt: z.string().optional(),
+  movieId: z.number(),
+  cinemaId: z.number(),
+  movieName: z.string(),
+  cinemaName: z.string(),
+  startAt: z.string(),
   seats: z.array(z.union([
     z.string(),
     z.object({ row: z.number(), col: z.number() }),
     z.object({ rowNumber: z.number(), seatNumber: z.number() })
-  ])).optional(),
-  status: z.enum(['unpaid','paid','upcoming','past','expired']).or(z.string()),
-  bookedAt: z.string().optional(),
-  createdAt: z.string().optional(),
-  price: z.union([z.number(), z.string()]).optional()
+  ])),
+  status: z.enum(['unpaid','paid','upcoming','past','expired']),
+  bookedAt: z.string(),
+  price: z.number()
 })
 
 export const SettingsSchema = z.object({

@@ -4,17 +4,17 @@
  */
 import type { LoginPayload, RegisterPayload } from './useAuth'
 
-interface AuthSession {
+type AuthSession = {
   loggedIn: boolean
   username?: string
 }
 
-interface LoginResponse {
+type LoginResponse = {
   success: boolean
   message?: string
 }
 
-interface RegisterResponse {
+type RegisterResponse = {
   success: boolean
   message?: string
 }
@@ -32,8 +32,7 @@ export const useAuthApi = () => {
         } 
       })
       return { success: true }
-    } catch (error) {
-      // Handle different error types appropriately
+    } catch {
       return { 
         success: false, 
         message: 'Неверный логин или пароль. Проверьте введенные данные и попробуйте снова' 
@@ -51,7 +50,7 @@ export const useAuthApi = () => {
         } 
       })
       return { success: true }
-    } catch (error) {
+    } catch {
       return { 
         success: false, 
         message: 'Ошибка регистрации' 
@@ -62,7 +61,7 @@ export const useAuthApi = () => {
   const logout = async (): Promise<void> => {
     try {
       await $api('/api/auth/logout', { method: 'POST' })
-    } catch (error) {
+    } catch {
       // Logout errors are non-critical, continue with local cleanup
     }
   }
@@ -71,7 +70,7 @@ export const useAuthApi = () => {
     try {
       const response = await $api<AuthSession>('/api/auth/session')
       return response || null
-    } catch (error) {
+    } catch {
       return null
     }
   }

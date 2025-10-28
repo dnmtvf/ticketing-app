@@ -6,12 +6,12 @@
 </template>
 
 <script setup lang="ts">
-interface Props {
+type Props = {
   message?: string
   size?: 'sm' | 'md' | 'lg'
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   message: 'Загрузка…',
   size: 'md'
 })

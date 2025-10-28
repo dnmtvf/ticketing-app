@@ -1,42 +1,51 @@
 import type { Movie, Session, SessionDetail, Booking } from '~/schemas'
 
-// Get API base URL for constructing full image URLs
-const getApiBaseUrl = () => {
-  if (import.meta.server) {
-    return useRequestURL().origin
+const ABSOLUTE_URL_PATTERN = /^https?:\/\//i
+const DEFAULT_API_BASE = 'http://localhost:3022'
+
+const resolveApiBaseUrl = (fallback?: string): string => {
+  if (fallback) {
+    return fallback
   }
-  return 'http://localhost:3022'
+  try {
+    const { public: { apiBase } } = useRuntimeConfig()
+    return apiBase
+  } catch {
+    return DEFAULT_API_BASE
+  }
 }
 
 /**
  * Get full poster URL by prepending API host
  */
-export function getPosterUrl(posterPath: string | undefined): string | undefined {
-  if (!posterPath) return undefined
-  if (posterPath.startsWith('http')) return posterPath
-  return `${getApiBaseUrl()}${posterPath}`
+export function getPosterUrl(posterPath: string | undefined, apiBase?: string): string | undefined {
+  if (!posterPath) {
+    return undefined
+  }
+
+  if (ABSOLUTE_URL_PATTERN.test(posterPath)) {
+    return posterPath
+  }
+
+  const baseUrl = resolveApiBaseUrl(apiBase)
+  try {
+    return new URL(posterPath, baseUrl).toString()
+  } catch {
+    return undefined
+  }
 }
 
 /**
  * Normalizes movie data to handle inconsistent backend field names
  * Ensures consistent shape across the application
  */
-export function normalizeMovie(raw: unknown): Movie {
-  // Type assertion aligns with Zod schema validation in schemas/index.ts
-  const movie = raw as Movie
-  
+export function normalizeMovie(movie: Movie, apiBase?: string): Movie {
+  const posterSource = movie.posterFullUrl ?? movie.posterImage
+  const resolvedPoster = getPosterUrl(posterSource, apiBase)
+
   return {
-    id: movie.id,
-    title: movie.title || movie.name,
-    posterImage: movie.posterImage, // API field
-    posterUrl: movie.posterUrl || movie.posterImage, // Fallback
-    posterFullUrl: movie.posterImage ? getPosterUrl(movie.posterImage) : undefined, // Full URL for images
-    description: movie.description,
-    duration: movie.duration || movie.runtime,
-    lengthMinutes: movie.lengthMinutes, // API field
-    rating: movie.rating,
-    year: movie.year,
-    name: movie.name // Preserve original for backward compatibility
+    ...movie,
+    posterFullUrl: resolvedPoster ?? movie.posterFullUrl // Full URL for images
   }
 }
 
@@ -47,15 +56,8 @@ export function normalizeSession(raw: unknown): Session {
   const session = raw as Session
   
   return {
-    id: session.id,
-    movieId: session.movieId,
-    cinemaId: session.cinemaId,
-    startTime: session.startTime || session.startAt || session.start_time,
-    startAt: session.startAt || session.startTime || session.start_time,
-    cinemaName: session.cinemaName || session.cinema?.name,
-    movieName: session.movieName || session.movie?.title,
-    cinema: session.cinema,
-    movie: session.movie
+    ...session
+    // No fallbacks needed - schema guarantees all fields exist
   }
 }
 
@@ -85,10 +87,8 @@ export function normalizeBooking(raw: unknown): Booking {
   const booking = raw as Booking
   
   return {
-    ...booking,
-    movieName: booking.movieName || booking.movie?.title,
-    cinemaName: booking.cinemaName || booking.cinema?.name,
-    startAt: booking.startAt || booking.time
+    ...booking
+    // No fallbacks needed - schema guarantees all fields exist
   }
 }
 
@@ -99,9 +99,7 @@ export function normalizeSessionDetail(raw: unknown): SessionDetail {
   const detail = raw as SessionDetail
   
   return {
-    ...detail,
-    movieName: detail.movieName || detail.movie?.title,
-    cinemaName: detail.cinemaName || detail.cinema?.name,
-    startAt: detail.startAt || detail.startTime
+    ...detail
+    // No fallbacks needed - schema guarantees all fields exist
   }
 }

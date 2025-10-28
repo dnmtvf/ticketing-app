@@ -24,14 +24,14 @@
 <script setup lang="ts">
 import type { Session } from '~/schemas'
 
-interface Props {
+type Props = {
   date: string
   sessions: Session[]
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
-const emit = defineEmits<{
+defineEmits<{
   goToSession: [id: number]
 }>()
 

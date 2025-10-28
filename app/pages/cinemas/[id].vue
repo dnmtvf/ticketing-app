@@ -30,7 +30,6 @@ try {
     cinema.value = cinemasArray.data.find(c => String(c.id) === id) || null
   }
   
-  // Get sessions for this cinema
   const sess = await $api(`/cinemas/${id}/sessions`).catch(() => $api(`/cinemas/${id}/session`))
   const ps = z.array(SessionSchema).safeParse(sess)
   if (ps.success) sessions.value = ps.data

@@ -96,7 +96,6 @@ const getRemainingSeconds = (booking: Booking): number => {
 }
 
 watchEffect(() => {
-  // auto-remove expired unpaid bookings (UI) and refetch
   const timeout = settings.value && 'paymentTimeoutSeconds' in settings.value
     ? settings.value.paymentTimeoutSeconds
     : settings.value && 'bookingPaymentTimeSeconds' in settings.value

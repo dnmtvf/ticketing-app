@@ -22,9 +22,10 @@ import { z } from 'zod'
 import { MovieSchema, SessionSchema, CinemaSchema, type Movie, type Session } from '~/schemas'
 import MovieDetails from '~/components/movies/MovieDetails.vue'
 import SessionGroup from '~/components/movies/SessionGroup.vue'
-import { groupSessionsByDate } from '~/utils/transformers'
+import { groupSessionsByDate, normalizeMovie } from '~/utils/transformers'
 
 const { $api } = useNuxtApp()
+const { public: { apiBase } } = useRuntimeConfig()
 const route = useRoute()
 const id = String(route.params.id)
 
@@ -39,8 +40,9 @@ try {
   const moviesArray = z.array(MovieSchema).safeParse(movies)
   
   if (moviesArray.success) {
+    const normalizedMovies = moviesArray.data.map(movie => normalizeMovie(movie, apiBase))
     // Find the movie in the list
-    movie.value = moviesArray.data.find(m => String(m.id) === id) || null
+    movie.value = normalizedMovies.find(m => String(m.id) === id) || null
   }
   
   // Get sessions and cinemas data
@@ -53,7 +55,6 @@ try {
   const cs = z.array(CinemaSchema).safeParse(cinemas)
   
   if (ps.success && cs.success) {
-    // Join sessions with cinema data to get cinema names
     sessions.value = ps.data.map(session => {
       const cinema = cs.data.find(c => String(c.id) === String(session.cinemaId))
       return {
@@ -71,7 +72,6 @@ try {
   pending.value = false
 }
 
-// Extract dates for rendering
 const dates = computed(() => {
   const grouped = groupSessionsByDate(sessions.value)
   return Object.keys(grouped).sort()

@@ -10,7 +10,6 @@ export interface RegisterPayload {
 }
 
 export const useAuth = () => {
-  // Reactive state management only - separated from API calls
   const loggedIn = useState<boolean>('auth:loggedIn', () => false)
   const username = useState<string | null>('auth:username', () => null)
   const loading = useState<boolean>('auth:loading', () => false)
@@ -32,7 +31,7 @@ export const useAuth = () => {
         error.value = result.message || 'Ошибка входа'
         return false
       }
-    } catch (err) {
+    } catch {
       error.value = 'Неверный логин или пароль. Проверьте введенные данные и попробуйте снова'
       return false
     } finally {
@@ -54,7 +53,7 @@ export const useAuth = () => {
         error.value = result.message || 'Ошибка регистрации'
         return false
       }
-    } catch (err) {
+    } catch {
       error.value = 'Ошибка регистрации'
       return false
     } finally {
@@ -68,7 +67,6 @@ export const useAuth = () => {
     try {
       await authApi.logout()
     } finally {
-      // Always clear local state, even if API call fails
       loggedIn.value = false
       username.value = null
       loading.value = false
@@ -85,7 +83,7 @@ export const useAuth = () => {
       }
       loggedIn.value = false
       return false
-    } catch (err) {
+    } catch {
       loggedIn.value = false
       username.value = null
       return false

@@ -46,7 +46,6 @@ const emitPay = () => {
   }
 }
 
-// Normalized data for consistent display
 const normalizedBooking = computed(() => normalizeBooking(props.booking))
 
 const ticketTitle = computed(() => normalizedBooking.value.movieName || normalizedBooking.value.movie?.title || '')

@@ -29,18 +29,17 @@
 
 <script setup lang="ts">
 import MovieCard from './MovieCard.vue'
-import { useMovies } from '~/composables/useMovies'
+import type { Movie } from '~/schemas'
 
-// Use the composable directly instead of receiving props
-const { movies, pending, error, loadMovies, refresh } = useMovies()
+type Props = {
+  movies: Movie[]
+  pending: boolean
+  error: string | null
+}
+
+defineProps<Props>()
 
 const emit = defineEmits<{
   'movie-select': [id: number]
 }>()
-
-// Expose methods for parent components if needed
-defineExpose({
-  loadMovies,
-  refresh
-})
 </script>
