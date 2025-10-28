@@ -11,7 +11,13 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:ui": "vitest"
+    "test:ui": "vitest",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:install": "playwright install",
+    "agents:init:vscode": "playwright init-agents --loop=vscode",
+    "agents:init:claude": "playwright init-agents --loop=claude",
+    "agents:init:opencode": "playwright init-agents --loop=opencode"
   },
   "dependencies": {
     "@nuxt/ui": "^4.1.0",
@@ -25,6 +31,7 @@
   "packageManager": "pnpm@10.16.1+sha512.0e155aa2629db8672b49e8475da6226aa4bdea85fdcdfdc15350874946d4f3c91faaf64cbdc4a5d1ab8002f473d5c3fcedcd197989cf0390f9badd3c04678706",
   "devDependencies": {
     "@nuxt/eslint": "^1.9.0",
+    "@playwright/test": "^1.49.0",
     "@nuxtjs/tailwindcss": "^6.14.0",
     "@tailwindcss/postcss": "^4.1.16",
     "@vitejs/plugin-vue": "^6.0.1",
