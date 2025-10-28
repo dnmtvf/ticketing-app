@@ -61,32 +61,32 @@ const past = computed(() => bookings.value.filter(b => b.status === 'past' || b.
 </script>
 
 <template>
-  <div>
-    <h1>Мои билеты</h1>
+  <section aria-labelledby="tickets-title">
+    <h1 id="tickets-title" class="text-2xl font-semibold mb-4">Мои билеты</h1>
     <div v-if="pending">Загрузка…</div>
     <div v-else-if="error">{{ error }}</div>
-    <div v-else class="tickets">
+    <div v-else class="grid gap-6">
       <section>
-        <h2>Неоплаченные</h2>
-        <div v-if="!unpaid.length">Нет неоплаченных билетов</div>
-        <div v-for="b in unpaid" :key="b.id" class="item">
-          <div>
+        <h2 class="text-xl font-medium mb-2">Неоплаченные</h2>
+        <div v-if="!unpaid.length" class="text-zinc-300">Нет неоплаченных билетов</div>
+        <div v-for="b in unpaid" :key="b.id" class="flex items-center gap-3 py-3 border-b border-zinc-800">
+          <div class="grid">
             <div>{{ b.movieName || b.movie?.title }}</div>
             <div>{{ b.cinemaName || b.cinema?.name }}</div>
             <div>{{ new Date(b.startAt || b.time || '').toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) }}</div>
             <div>Ряд {{ b.seats?.[0]?.row || '' }}, место {{ b.seats?.[0]?.col || '' }}</div>
           </div>
-          <div class="spacer" />
-          <button @click="pay(b)">Оплатить</button>
+          <div class="grow" />
+          <button class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800" @click="pay(b)">Оплатить</button>
           <div>Осталось {{ Math.floor(remainingSec(b)/60) }}:{{ (remainingSec(b)%60).toString().padStart(2,'0') }}</div>
         </div>
       </section>
 
       <section>
-        <h2>Будущие</h2>
-        <div v-if="!upcoming.length">Нет будущих билетов</div>
-        <div v-for="b in upcoming" :key="b.id" class="item">
-          <div>
+        <h2 class="text-xl font-medium mb-2">Будущие</h2>
+        <div v-if="!upcoming.length" class="text-zinc-300">Нет будущих билетов</div>
+        <div v-for="b in upcoming" :key="b.id" class="py-3 border-b border-zinc-800">
+          <div class="grid">
             <div>{{ b.movieName || b.movie?.title }}</div>
             <div>{{ b.cinemaName || b.cinema?.name }}</div>
             <div>{{ new Date(b.startAt || b.time || '').toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) }}</div>
@@ -96,10 +96,10 @@ const past = computed(() => bookings.value.filter(b => b.status === 'past' || b.
       </section>
 
       <section>
-        <h2>Прошедшие</h2>
-        <div v-if="!past.length">Нет прошедших билетов</div>
-        <div v-for="b in past" :key="b.id" class="item">
-          <div>
+        <h2 class="text-xl font-medium mb-2">Прошедшие</h2>
+        <div v-if="!past.length" class="text-zinc-300">Нет прошедших билетов</div>
+        <div v-for="b in past" :key="b.id" class="py-3 border-b border-zinc-800">
+          <div class="grid">
             <div>{{ b.movieName || b.movie?.title }}</div>
             <div>{{ b.cinemaName || b.cinema?.name }}</div>
             <div>{{ new Date(b.startAt || b.time || '').toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) }}</div>
@@ -108,11 +108,7 @@ const past = computed(() => bookings.value.filter(b => b.status === 'past' || b.
         </div>
       </section>
     </div>
-  </div>
+  </section>
 </template>
 
-<style scoped>
-.tickets { display: grid; gap: 24px; }
-.item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #333; }
-.spacer { flex: 1; }
-</style>
+<style scoped></style>

@@ -35,41 +35,35 @@ const goToSession = (sessionId: string | number) => navigateTo(`/sessions/${sess
 </script>
 
 <template>
-  <div>
-    <h1>Фильм</h1>
+  <article aria-labelledby="movie-title">
+    <h1 id="movie-title" class="text-2xl font-semibold mb-4">Фильм</h1>
     <div v-if="pending">Загрузка…</div>
     <div v-else-if="error">{{ error }}</div>
     <div v-else>
-      <section v-if="movie" class="movie">
-        <img :src="movie.posterUrl" alt="" class="poster" />
-        <div>
-          <h2>{{ movie.title || movie.name }}</h2>
-          <p>{{ movie.description }}</p>
+      <section v-if="movie" class="flex gap-4 mb-6">
+        <img :src="movie.posterUrl" alt="" class="w-[140px] h-[200px] object-cover bg-zinc-800" />
+        <div class="grid gap-1">
+          <h2 class="text-xl font-medium">{{ movie.title || movie.name }}</h2>
+          <p class="text-zinc-300">{{ movie.description }}</p>
           <div>Год: {{ movie.year }}</div>
           <div>Продолжительность: {{ movie.duration }}</div>
           <div>Рейтинг: {{ movie.rating }}</div>
         </div>
       </section>
 
-      <div v-for="(list, date) in groupByDate(sessions)" :key="date" class="day">
-        <h3>{{ date }}</h3>
-        <div v-for="cinema in [...new Set(list.map(s=>s.cinemaName||s.cinema?.name))]" :key="cinema" class="cinema">
-          <div class="cinema-name">{{ cinema }}</div>
-          <div class="times">
-            <button v-for="s in list.filter(x => (x.cinemaName||x.cinema?.name)===cinema)" :key="s.id" @click="goToSession(s.id)">
+      <section v-for="(list, date) in groupByDate(sessions)" :key="date" class="border-t border-zinc-700 pt-3 mt-3">
+        <h3 class="font-semibold mb-2">{{ date }}</h3>
+        <div v-for="cinema in [...new Set(list.map(s=>s.cinemaName||s.cinema?.name))]" :key="cinema" class="flex items-center gap-3 py-2">
+          <div class="min-w-48">{{ cinema }}</div>
+          <div class="flex flex-wrap gap-2">
+            <button v-for="s in list.filter(x => (x.cinemaName||x.cinema?.name)===cinema)" :key="s.id" @click="goToSession(s.id)" class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800">
               {{ (s.startAt || s.start_time || '').slice(11,16) }}
             </button>
           </div>
         </div>
-      </div>
+      </section>
     </div>
-  </div>
+  </article>
 </template>
 
-<style scoped>
-.movie { display:flex; gap:16px; margin-bottom: 24px; }
-.poster { width: 140px; height: 200px; object-fit: cover; background:#222; }
-.cinema { display:flex; align-items:center; gap:12px; padding:8px 0; }
-.times { display:flex; gap:8px; }
-.day { border-top:1px solid #333; padding-top:12px; margin-top:12px; }
-</style>
+<style scoped></style>

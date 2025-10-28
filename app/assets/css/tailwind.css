@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+/* App base theme */
+:root { color-scheme: dark; }
+body { @apply bg-black text-gray-100; }

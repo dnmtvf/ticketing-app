@@ -74,46 +74,39 @@ const book = async () => {
 </script>
 
 <template>
-  <div>
-    <h1>Сеанс</h1>
+  <section aria-labelledby="session-title">
+    <h1 id="session-title" class="text-2xl font-semibold mb-4">Сеанс</h1>
     <div v-if="pending">Загрузка…</div>
     <div v-else-if="error">{{ error }}</div>
-    <div v-else class="hall">
-      <div class="meta">
+    <div v-else class="grid gap-4">
+      <div class="grid gap-1 text-zinc-300">
         <div>Фильм: {{ detail?.movieName || detail?.movie?.title }}</div>
         <div>Кинотеатр: {{ detail?.cinemaName || detail?.cinema?.name }}</div>
         <div>Время: {{ (detail?.startAt || '').replace('T', ' ').slice(0,16) }}</div>
       </div>
 
-      <div class="grid">
-        <div class="row" v-for="r in rows" :key="r" :style="{ gridTemplateColumns: `80px repeat(${cols}, 28px)` }">
-          <div class="label">ряд {{ r }}</div>
+      <div class="grid gap-2">
+        <div class="grid items-center gap-2" v-for="r in rows" :key="r" :style="{ gridTemplateColumns: `80px repeat(${cols}, 28px)` }">
+          <div class="text-zinc-400">ряд {{ r }}</div>
           <button
             v-for="c in cols"
             :key="c"
-            class="seat"
+            class="w-6 h-6 border-2 border-zinc-400 data-[booked=true]:opacity-40 data-[booked=true]:border-rose-400 data-[selected=true]:bg-sky-900 data-[selected=true]:border-sky-300"
             :data-booked="isBooked(r,c)"
             :data-selected="isSelected(r,c)"
             @click="toggle(r,c)"
             :disabled="isBooked(r,c)"
+            :aria-pressed="isSelected(r,c)"
+            :aria-label="`Ряд ${r}, место ${c}`"
           />
         </div>
       </div>
 
-      <div class="actions">
-        <button @click="book">Забронировать</button>
+      <div>
+        <button @click="book" class="px-4 py-2 rounded bg-sky-600 hover:bg-sky-500">Забронировать</button>
       </div>
     </div>
-  </div>
+  </section>
 </template>
 
-<style scoped>
-.hall { display: grid; gap: 16px; }
-.meta { display: grid; gap: 4px; }
-.grid { display: grid; gap: 8px; }
-.row { display: grid; align-items: center; gap: 8px; }
-.seat { width: 24px; height: 24px; border: 2px solid #aaa; background: transparent; }
-.seat[data-booked="true"] { opacity: .4; border-color: #f66; }
-.seat[data-selected="true"] { background: #356; border-color: #6cf; }
-.label { color: #bbb; }
-</style>
+<style scoped></style>

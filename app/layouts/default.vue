@@ -1,18 +1,21 @@
 <template>
-  <div class="layout">
-    <aside class="sidebar">
-      <nav>
-        <NuxtLink to="/movies" active-class="active">Фильмы</NuxtLink>
-        <NuxtLink to="/cinemas" active-class="active">Кинотеатры</NuxtLink>
-        <NuxtLink to="/tickets" active-class="active">Мои билеты</NuxtLink>
-        <button v-if="auth.loggedIn" class="linklike" @click="onLogout">Выход</button>
-        <NuxtLink v-else to="/login" active-class="active">Вход</NuxtLink>
+  <div class="min-h-dvh grid grid-cols-[240px_1fr]">
+    <aside class="border-r border-zinc-700 p-4">
+      <nav aria-label="Основная навигация">
+        <ul class="flex flex-col gap-3">
+          <li><NuxtLink class="hover:underline" to="/movies" active-class="font-bold underline">Фильмы</NuxtLink></li>
+          <li><NuxtLink class="hover:underline" to="/cinemas" active-class="font-bold underline">Кинотеатры</NuxtLink></li>
+          <li><NuxtLink class="hover:underline" to="/tickets" active-class="font-bold underline">Мои билеты</NuxtLink></li>
+          <li v-if="auth.loggedIn"><button class="text-sky-400 hover:underline text-left" @click="onLogout">Выход</button></li>
+          <li v-else><NuxtLink class="hover:underline" to="/login" active-class="font-bold underline">Вход</NuxtLink></li>
+        </ul>
       </nav>
     </aside>
-    <main class="content">
+    <main class="p-6" role="main">
       <slot />
     </main>
   </div>
+  
 </template>
 
 <script setup lang="ts">
@@ -24,12 +27,4 @@ const onLogout = async () => {
 }
 </script>
 
-<style scoped>
-.layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100dvh; }
-.sidebar { border-right: 1px solid #444; padding: 16px; }
-.sidebar nav { display: flex; flex-direction: column; gap: 12px; }
-.content { padding: 24px; }
-.active { font-weight: 700; text-decoration: underline; }
-.linklike { background: none; border: none; color: #61dafb; text-align: left; padding: 0; cursor: pointer; }
-.linklike:hover { text-decoration: underline; }
-</style>
+<style scoped></style>
