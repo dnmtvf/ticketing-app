@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { remainingSeconds } from '~/utils/time'
+import type { Booking, Settings } from '~/schemas'
 definePageMeta({ middleware: 'auth' })
 
 import { z } from 'zod'
-import { SettingsSchema, BookingSchema } from '~/app/schemas'
+import { SettingsSchema, BookingSchema } from '~/schemas'
 const { $api } = useNuxtApp()
 
-const settings = ref<{ paymentTimeoutSeconds: number } | null>(null)
-const bookings = ref<any[]>([])
+type SettingsLike = Settings
+type BookingLike = Booking
+
+const settings = ref<SettingsLike | null>(null)
+const bookings = ref<BookingLike[]>([])
 const pending = ref(true)
 const error = ref<string | null>(null)
 
@@ -19,9 +23,9 @@ const load = async () => {
       $api('/me/bookings')
     ])
     const ps = SettingsSchema.safeParse(s)
-    settings.value = ps.success ? ps.data as any : s
+    settings.value = ps.success ? ps.data : null
     const pb = z.array(BookingSchema).safeParse(b)
-    bookings.value = pb.success ? pb.data as any[] : (Array.isArray(b) ? b : [])
+    bookings.value = pb.success ? pb.data : []
   } catch (e) {
     error.value = 'Ошибка загрузки'
   } finally {
@@ -32,22 +36,33 @@ const load = async () => {
 await load()
 
 const now = ref(Date.now())
-let timer: any
+let timer: ReturnType<typeof setInterval> | undefined
 onMounted(() => { timer = setInterval(() => (now.value = Date.now()), 1000) })
-onBeforeUnmount(() => clearInterval(timer))
+onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 
-const remainingSec = (b: any) => remainingSeconds(b.bookedAt || b.createdAt || Date.now(), settings.value?.paymentTimeoutSeconds ?? 0, now.value)
+const remainingSec = (b: BookingLike) => {
+  const timeout = (settings.value && 'paymentTimeoutSeconds' in settings.value && typeof settings.value.paymentTimeoutSeconds === 'number')
+    ? settings.value.paymentTimeoutSeconds
+    : ((settings.value && 'bookingPaymentTimeSeconds' in settings.value && typeof settings.value.bookingPaymentTimeSeconds === 'number')
+      ? settings.value.bookingPaymentTimeSeconds
+      : 0)
+  return remainingSeconds(b.bookedAt || b.createdAt || Date.now(), timeout, now.value)
+}
 
 watchEffect(() => {
   // auto-remove expired unpaid bookings (UI) and refetch
-  const timeout = settings.value?.paymentTimeoutSeconds
+  const timeout = (settings.value && 'paymentTimeoutSeconds' in settings.value)
+    ? settings.value.paymentTimeoutSeconds
+    : ((settings.value && 'bookingPaymentTimeSeconds' in settings.value)
+      ? settings.value.bookingPaymentTimeSeconds
+      : undefined)
   if (!timeout) return
   const before = bookings.value.length
   bookings.value = bookings.value.filter(b => !(b.status === 'unpaid' && remainingSec(b) <= 0))
   if (bookings.value.length !== before) { load() }
 })
 
-const pay = async (b: any) => {
+const pay = async (b: BookingLike) => {
   const toast = useToast()
   try {
     await $api(`/bookings/${b.id}/payments`, { method: 'POST' })
@@ -58,9 +73,13 @@ const pay = async (b: any) => {
   }
 }
 
-const unpaid = computed(() => bookings.value.filter(b => b.status === 'unpaid'))
-const upcoming = computed(() => bookings.value.filter(b => b.status === 'paid' || b.status === 'upcoming'))
-const past = computed(() => bookings.value.filter(b => b.status === 'past' || b.status === 'expired'))
+const isUnpaid = (b: BookingLike) => (b.status ? b.status === 'unpaid' : b.isPaid === false)
+const isPaid = (b: BookingLike) => (b.status ? (b.status === 'paid' || b.status === 'upcoming') : b.isPaid === true)
+const isPast = (b: BookingLike) => (b.status ? (b.status === 'past' || b.status === 'expired') : false)
+
+const unpaid = computed(() => bookings.value.filter(isUnpaid))
+const upcoming = computed(() => bookings.value.filter(isPaid))
+const past = computed(() => bookings.value.filter(isPast))
 </script>
 
 <template>
@@ -77,7 +96,7 @@ const past = computed(() => bookings.value.filter(b => b.status === 'past' || b.
             <div>{{ b.movieName || b.movie?.title }}</div>
             <div>{{ b.cinemaName || b.cinema?.name }}</div>
             <div>{{ new Date(b.startAt || b.time || '').toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) }}</div>
-            <div>Ряд {{ b.seats?.[0]?.row || '' }}, место {{ b.seats?.[0]?.col || '' }}</div>
+            <div>Ряд {{ b.seats?.[0]?.row || b.seats?.[0]?.rowNumber || '' }}, место {{ b.seats?.[0]?.col || b.seats?.[0]?.seatNumber || '' }}</div>
           </div>
           <div class="grow" />
           <UButton variant="outline" @click="pay(b)">Оплатить</UButton>
@@ -93,7 +112,7 @@ const past = computed(() => bookings.value.filter(b => b.status === 'past' || b.
             <div>{{ b.movieName || b.movie?.title }}</div>
             <div>{{ b.cinemaName || b.cinema?.name }}</div>
             <div>{{ new Date(b.startAt || b.time || '').toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) }}</div>
-            <div>Ряд {{ b.seats?.[0]?.row || '' }}, место {{ b.seats?.[0]?.col || '' }}</div>
+            <div>Ряд {{ b.seats?.[0]?.row || b.seats?.[0]?.rowNumber || '' }}, место {{ b.seats?.[0]?.col || b.seats?.[0]?.seatNumber || '' }}</div>
           </div>
         </div>
       </section>
@@ -106,7 +125,7 @@ const past = computed(() => bookings.value.filter(b => b.status === 'past' || b.
             <div>{{ b.movieName || b.movie?.title }}</div>
             <div>{{ b.cinemaName || b.cinema?.name }}</div>
             <div>{{ new Date(b.startAt || b.time || '').toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) }}</div>
-            <div>Ряд {{ b.seats?.[0]?.row || '' }}, место {{ b.seats?.[0]?.col || '' }}</div>
+            <div>Ряд {{ b.seats?.[0]?.row || b.seats?.[0]?.rowNumber || '' }}, место {{ b.seats?.[0]?.col || b.seats?.[0]?.seatNumber || '' }}</div>
           </div>
         </div>
       </section>

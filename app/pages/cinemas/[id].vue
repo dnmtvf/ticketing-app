@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import { CinemaSchema, SessionSchema } from '~/app/schemas'
+import { CinemaSchema, SessionSchema, type Cinema, type Session } from '~/schemas'
 const { $api } = useNuxtApp()
 const route = useRoute()
-const id = route.params.id as string
+const id = String(route.params.id)
 
-const cinema = ref<any>(null)
-const sessions = ref<any[]>([])
+const cinema = ref<Cinema | null>(null)
+const sessions = ref<Session[]>([])
 const pending = ref(true)
 const error = ref<string | null>(null)
 
-const groupByDate = (list: any[]) => {
-  const map: Record<string, any[]> = {}
+const groupByDate = (list: Session[]) => {
+  const map: Record<string, Session[]> = {}
   for (const s of list) {
-    const d = (s.startAt || s.start_time || s.date || '').slice(0, 10)
+    const d = (s.startAt || s.startTime || s.start_time || s.date || '').slice(0, 10)
     if (!map[d]) map[d] = []
     map[d].push(s)
   }
@@ -27,10 +27,11 @@ try {
   ])
   if (c) {
     const pc = CinemaSchema.safeParse(c)
-    cinema.value = pc.success ? pc.data as any : c
+    if (pc.success) cinema.value = pc.data
   }
   const ps = z.array(SessionSchema).safeParse(sess)
-  sessions.value = ps.success ? ps.data as any[] : (Array.isArray(sess) ? sess : [])
+  if (ps.success) sessions.value = ps.data
+  else error.value = 'Ошибка загрузки'
 } catch (e) {
   error.value = 'Ошибка загрузки'
 } finally {
@@ -55,7 +56,7 @@ const goToSession = (sessionId: string | number) => navigateTo(`/sessions/${sess
         <h3 class="font-semibold mb-2">{{ date }}</h3>
         <div class="flex flex-wrap gap-2">
           <button v-for="s in list" :key="s.id" @click="goToSession(s.id)" class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800">
-            {{ (s.startAt || s.start_time || '').slice(11,16) }} — {{ s.movieName || s.movie?.title }}
+            {{ (s.startAt || s.startTime || s.start_time || '').slice(11,16) }} — {{ s.movieName || s.movie?.title }}
           </button>
         </div>
       </section>

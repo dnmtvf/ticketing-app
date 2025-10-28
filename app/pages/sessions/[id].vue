@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import { SessionDetailSchema } from '~/app/schemas'
+import { SessionDetailSchema, type SessionDetail } from '~/schemas'
 import { normalizeBooked, seatId, toggleSeat } from '~/utils/seats'
 const { $api } = useNuxtApp()
 const auth = useAuth()
 const route = useRoute()
-const id = route.params.id as string
+const id = String(route.params.id)
 
-const detail = ref<any>(null)
+const detail = ref<SessionDetail | null>(null)
 const pending = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<string[]>([])
@@ -16,27 +16,33 @@ const selected = ref<string[]>([])
 try {
   const d = await $api(`/movieSessions/${id}`)
   const parsed = SessionDetailSchema.safeParse(d)
-  detail.value = parsed.success ? parsed.data as any : d
+  if (parsed.success) detail.value = parsed.data
+  else throw new Error('Schema mismatch')
 } catch (e) {
   error.value = 'Ошибка загрузки сеанса'
 } finally {
   pending.value = false
 }
 
+type SeatGridObj = { rows: number; cols?: number; seatsPerRow?: number }
+const isSeatGrid = (v: unknown): v is SeatGridObj => typeof v === 'object' && v !== null && 'rows' in v
+
 const rows = computed(() => {
   const s = detail.value?.seats
   if (!s) return 0
-  if (typeof s.rows === 'number') return s.rows
   if (Array.isArray(s)) return s.length
+  if (isSeatGrid(s) && typeof s.rows === 'number') return s.rows
   return 0
 })
 
 const cols = computed(() => {
   const s = detail.value?.seats
   if (!s) return 0
-  if (typeof s.cols === 'number') return s.cols
-  if (typeof (s as any).seatsPerRow === 'number') return (s as any).seatsPerRow
   if (Array.isArray(s)) return Array.isArray(s[0]) ? s[0].length : 0
+  if (isSeatGrid(s)) {
+    if (typeof s.cols === 'number') return s.cols
+    if (typeof s.seatsPerRow === 'number') return s.seatsPerRow
+  }
   return 0
 })
 
@@ -55,16 +61,20 @@ const book = async () => {
   if (!selected.value.length) return
   const toast = useToast()
   try {
-    const seats = selected.value.map(s => {
-      const [r, c] = s.slice(1).split('c').map(Number)
+    const seats = selected.value.map((sid) => {
+      const [r, c] = sid.slice(1).split('c').map(Number)
       return { rowNumber: r, seatNumber: c }
     })
     await $api(`/movieSessions/${id}/bookings`, { method: 'POST', body: { seats } })
     toast.add({ title: 'Места забронированы' })
     await navigateTo('/tickets')
-  } catch (e: any) {
+  } catch (e) {
     // Conflict or validation error: refresh seat map
-    try { detail.value = await $api(`/movieSessions/${id}`) } catch {}
+    try {
+      const refreshed = await $api(`/movieSessions/${id}`)
+      const parsed = SessionDetailSchema.safeParse(refreshed)
+      if (parsed.success) detail.value = parsed.data
+    } catch {}
     toast.add({ title: 'Не удалось забронировать места', color: 'rose' })
   }
 }
@@ -79,7 +89,7 @@ const book = async () => {
       <div class="grid gap-1 text-zinc-300">
         <div>Фильм: {{ detail?.movieName || detail?.movie?.title }}</div>
         <div>Кинотеатр: {{ detail?.cinemaName || detail?.cinema?.name }}</div>
-        <div>Время: {{ (detail?.startAt || '').replace('T', ' ').slice(0,16) }}</div>
+        <div>Время: {{ String(detail?.startAt || detail?.startTime || '').replace('T', ' ').slice(0,16) }}</div>
       </div>
 
       <div class="grid gap-2">

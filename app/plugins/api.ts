@@ -1,7 +1,6 @@
 export default defineNuxtPlugin(() => {
-  const api = $fetch.create({
-    baseURL: '/api/proxy',
-    credentials: 'include',
-  })
+  const isServer = import.meta.server
+  const baseURL = isServer ? `${useRequestURL().origin}/api/proxy` : '/api/proxy'
+  const api = $fetch.create({ baseURL, credentials: 'include' })
   return { provide: { api } }
 })

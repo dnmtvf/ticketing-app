@@ -11,7 +11,7 @@
       <UFormGroup name="passwordConfirmation" label="Пароль" :error="v$.form.passwordConfirmation.$error ? 'Пароль не совпадает' : ''">
         <UInput v-model="form.passwordConfirmation" type="password" placeholder="Подтвердите пароль" />
       </UFormGroup>
-      <UButton :loading="auth.loading" :disabled="v$.$invalid" type="submit">Зарегистрироваться</UButton>
+      <UButton :loading="auth.loading.value" type="submit">Зарегистрироваться</UButton>
     </UForm>
     <p class="mt-6 text-sm text-zinc-300">
       Если вы уже зарегистрированы <NuxtLink class="text-sky-400 underline" to="/login">войдите</NuxtLink>

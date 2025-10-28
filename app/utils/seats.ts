@@ -1,14 +1,23 @@
 export const seatId = (r: number, c: number) => `r${r}c${c}`
 
-export function normalizeBooked(booked: any): Set<string> {
+type BookedSeatRC = { row: number; col: number }
+type BookedSeatRN = { rowNumber: number; seatNumber: number }
+type BookedSeat = string | BookedSeatRC | BookedSeatRN
+
+export function normalizeBooked(booked: BookedSeat[]): Set<string> {
   const set = new Set<string>()
-  if (Array.isArray(booked)) {
-    for (const b of booked) {
-      if (typeof b === 'string') set.add(b)
-      else if (b && typeof b === 'object') {
-        const r = 'rowNumber' in b ? (b as any).rowNumber : (b as any).row
-        const c = 'seatNumber' in b ? (b as any).seatNumber : (b as any).col
-        if (typeof r === 'number' && typeof c === 'number') set.add(seatId(r, c))
+  for (const b of booked) {
+    if (typeof b === 'string') {
+      set.add(b)
+      continue
+    }
+    if (b && typeof b === 'object') {
+      if ('row' in b && 'col' in b && typeof b.row === 'number' && typeof b.col === 'number') {
+        set.add(seatId(b.row, b.col))
+        continue
+      }
+      if ('rowNumber' in b && 'seatNumber' in b && typeof b.rowNumber === 'number' && typeof b.seatNumber === 'number') {
+        set.add(seatId(b.rowNumber, b.seatNumber))
       }
     }
   }

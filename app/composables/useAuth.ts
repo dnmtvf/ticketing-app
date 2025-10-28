@@ -16,7 +16,7 @@ export const useAuth = () => {
       loggedIn.value = true
       username.value = payload.username
       return true
-    } catch (e: any) {
+    } catch (e) {
       error.value = 'Неверный логин или пароль. Проверьте введенные данные и попробуйте снова'
       return false
     } finally {
@@ -32,8 +32,8 @@ export const useAuth = () => {
       loggedIn.value = true
       username.value = payload.username
       return true
-    } catch (e: any) {
-      error.value = e?.data?.message || 'Ошибка регистрации'
+    } catch (e) {
+      error.value = 'Ошибка регистрации'
       return false
     } finally {
       loading.value = false

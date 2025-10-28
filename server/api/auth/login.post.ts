@@ -1,9 +1,11 @@
 import { defineEventHandler, readBody, setCookie } from 'h3'
 
 export default defineEventHandler(async (event) => {
+  const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
   const config = useRuntimeConfig(event)
   const body = await readBody<{ username: string; password: string }>(event)
-  const { username, password } = body || ({} as any)
+  const username = body?.username
+  const password = body?.password
   if (!username || !password) {
     throw createError({ statusCode: 400, statusMessage: 'Требуется имя пользователя и пароль' })
   }
@@ -24,9 +26,22 @@ export default defineEventHandler(async (event) => {
       maxAge: 60 * 60,
     })
     return { ok: true }
-  } catch (e: any) {
-    const statusCode = e?.response?.status || e?.statusCode || 401
-    const message = e?.response?._data?.message || 'Неверный логин или пароль. Проверьте введенные данные и попробуйте снова'
-    throw createError({ statusCode, statusMessage: message, data: e?.response?._data })
+  } catch (e) {
+    const statusCode = (() => {
+      if (isRecord(e) && isRecord(e.response)) {
+        const st = e.response.status
+        if (typeof st === 'number') return st
+      }
+      if (isRecord(e) && typeof e.statusCode === 'number') return e.statusCode
+      return 401
+    })()
+    const message = (() => {
+      if (isRecord(e) && isRecord(e.response) && isRecord(e.response._data)) {
+        const msg = e.response._data.message
+        if (typeof msg === 'string') return msg
+      }
+      return 'Неверный логин или пароль. Проверьте введенные данные и попробуйте снова'
+    })()
+    throw createError({ statusCode, statusMessage: message })
   }
 })

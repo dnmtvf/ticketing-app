@@ -1,10 +1,11 @@
-import { defineEventHandler, getCookie, getQuery, readBody } from 'h3'
+import { defineEventHandler, getCookie, getQuery, readBody, getRequestURL } from 'h3'
 
 export default defineEventHandler(async (event) => {
+  const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
   const config = useRuntimeConfig(event)
   const token = getCookie(event, 'auth_token')
-  const pathParts = event.context.params?.path as string[] | undefined
-  const pathname = '/' + (pathParts?.join('/') || '')
+  const urlObj = getRequestURL(event)
+  const pathname = urlObj.pathname.startsWith('/api/proxy') ? urlObj.pathname.slice('/api/proxy'.length) || '/' : urlObj.pathname
   const url = `${config.public.apiBase}${pathname}`
 
   const method = event.method as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -18,9 +19,26 @@ export default defineEventHandler(async (event) => {
       body,
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     })
-  } catch (e: any) {
-    const statusCode = e?.response?.status || e?.statusCode || 500
-    const message = e?.response?._data?.message || e.message || 'Proxy error'
-    throw createError({ statusCode, statusMessage: message, data: e?.response?._data })
+  } catch (e) {
+    const statusCode = (() => {
+      if (isRecord(e) && isRecord(e.response)) {
+        const st = e.response.status
+        if (typeof st === 'number') return st
+      }
+      if (isRecord(e) && typeof e.statusCode === 'number') return e.statusCode
+      return 500
+    })()
+    const message = (() => {
+      if (isRecord(e)) {
+        const msg = e.message
+        if (typeof msg === 'string') return msg
+        if (isRecord(e.response) && isRecord(e.response._data)) {
+          const dm = e.response._data.message
+          if (typeof dm === 'string') return dm
+        }
+      }
+      return 'Proxy error'
+    })()
+    throw createError({ statusCode, statusMessage: message })
   }
 })

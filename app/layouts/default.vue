@@ -6,7 +6,7 @@
           <li><NuxtLink class="hover:underline" to="/movies" active-class="font-bold underline">Фильмы</NuxtLink></li>
           <li><NuxtLink class="hover:underline" to="/cinemas" active-class="font-bold underline">Кинотеатры</NuxtLink></li>
           <li><NuxtLink class="hover:underline" to="/tickets" active-class="font-bold underline">Мои билеты</NuxtLink></li>
-          <li v-if="auth.loggedIn"><button class="text-sky-400 hover:underline text-left" @click="onLogout">Выход</button></li>
+          <li v-if="auth.loggedIn.value"><button class="text-sky-400 hover:underline text-left" @click="onLogout">Выход</button></li>
           <li v-else><NuxtLink class="hover:underline" to="/login" active-class="font-bold underline">Вход</NuxtLink></li>
         </ul>
       </nav>

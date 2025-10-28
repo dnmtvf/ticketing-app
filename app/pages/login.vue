@@ -9,7 +9,7 @@
         <UInput v-model="form.password" type="password" placeholder="Введите пароль" />
       </UFormGroup>
       <p v-if="errorMessage" class="text-rose-400 text-sm">{{ errorMessage }}</p>
-      <UButton :loading="auth.loading" type="submit" color="primary">Войти</UButton>
+      <UButton :loading="auth.loading.value" type="submit" color="primary">Войти</UButton>
     </UForm>
     <p class="mt-6 text-sm text-zinc-300">
       Если у вас нет аккаунта <NuxtLink class="text-sky-400 underline" to="/register">зарегистрируйтесь</NuxtLink>
@@ -29,7 +29,8 @@ const onSubmit = async () => {
   if (ok) {
     const toast = useToast()
     toast.add({ title: 'Успешный вход' })
-    const redirect = (route.query.redirect as string) || '/tickets'
+    const rq = route.query.redirect
+    const redirect = typeof rq === 'string' ? rq : '/tickets'
     await navigateTo(redirect)
   }
 }

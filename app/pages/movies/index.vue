@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import { MovieSchema } from '~/app/schemas'
+import { MovieSchema, type Movie } from '~/schemas'
 const { $api } = useNuxtApp()
 
-const state = reactive({ pending: true, error: '' as string, movies: [] as any[] })
+const state = reactive<{ pending: boolean; error: string; movies: Movie[] }>({ pending: true, error: '', movies: [] })
 try {
   const res = await $api('/movies')
   const parsed = z.array(MovieSchema).safeParse(res)
-  if (!parsed.success) throw new Error('Schema mismatch')
-  state.movies = parsed.data
+  if (!parsed.success) {
+    state.error = 'Ошибка загрузки фильмов'
+  } else {
+    state.movies = parsed.data
+  }
 } catch (e) {
   state.error = 'Ошибка загрузки фильмов'
 } finally {
