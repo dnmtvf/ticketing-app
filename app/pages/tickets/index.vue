@@ -1,10 +1,11 @@
 <template>
-  <TicketsView 
-    :bookings="bookings" 
-    :settings="settings" 
-    :pending="pending" 
+  <TicketsView
+    v-if="settings"
+    :bookings="bookings"
+    :settings="settings"
+    :pending="pending"
     :error="errorMessage"
-    @refresh="refreshData" 
+    @refresh="refreshData"
   />
 </template>
 
@@ -19,8 +20,8 @@ const { $api } = useNuxtApp()
 const parsingError = ref<string | null>(null)
 
 const { data: ticketsData, pending, error, refresh: refreshData } = await useAsyncData<{
-  settings: Settings | null
-  bookings: Booking[] | undefined
+  settings: Settings
+  bookings: EnrichedBooking[]
 }>('tickets', async () => {
   const [settingsRes, bookingsRes, moviesRes, cinemasRes] = await Promise.all([
     $api('/api/proxy/settings'),
@@ -72,19 +73,19 @@ const { data: ticketsData, pending, error, refresh: refreshData } = await useAsy
     .map(session => [session.data.id, session]))
   
   let enrichedBookings: EnrichedBooking[] = []
-  
+
   if (bookingsParsed.success && sessionsData.length === bookingsParsed.data.length) {
     enrichedBookings = bookingsParsed.data.map(booking => {
       const session = sessionsMap.get(booking.movieSessionId)
-      
+
       if (!session) {
         parsingError.value = 'Не удалось загрузить данные сеанса'
         return null
       }
-      
+
       const movie = movieMap.get(booking.movieSessionId)
       const cinema = cinemaMap.get(session.data.cinemaId)
-      
+
       return {
         ...booking,
         movieName: movie?.title || '',
@@ -93,17 +94,17 @@ const { data: ticketsData, pending, error, refresh: refreshData } = await useAsy
         cinemaName: cinema?.name || '',
         sessionTime: session.data.startTime || ''
       }
-    }).filter(Boolean)
+    }).filter((b): b is EnrichedBooking => b !== null)
   }
 
   return {
-    settings: settingsParsed.success ? settingsParsed.data : null,
+    settings: settingsParsed.success ? settingsParsed.data : { bookingPaymentTimeSeconds: 300 },
     bookings: enrichedBookings
   }
 })
 
-const settings = computed<Settings | null>(() => ticketsData.value?.settings ?? null)
-const bookings = computed<Booking[]>(() => ticketsData.value?.bookings ?? [])
+const settings = computed<Settings>(() => ticketsData.value?.settings ?? { bookingPaymentTimeSeconds: 300 })
+const bookings = computed<EnrichedBooking[]>(() => ticketsData.value?.bookings ?? [])
 const errorMessage = computed<string | null>(() => {
   if (error.value?.message) return error.value.message
   if (parsingError.value) return parsingError.value

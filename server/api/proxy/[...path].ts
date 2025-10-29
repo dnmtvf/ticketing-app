@@ -17,12 +17,13 @@ export default defineEventHandler(async (event) => {
   const body = method === 'GET' ? undefined : await readBody(event)
 
   try {
-    return await $fetch(url, {
+    const result: unknown = await $fetch(url, {
       method,
       query,
       body,
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     })
+    return result
   } catch (e) {
     const statusCode = (() => {
       if (isRecord(e) && isRecord(e.response)) {

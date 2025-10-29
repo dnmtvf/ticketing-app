@@ -1,9 +1,9 @@
-import Toast, { type PluginOptions } from 'vue-toastification'
+import Toast, { type PluginOptions, POSITION } from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
 
 export default defineNuxtPlugin((nuxtApp) => {
   const options: PluginOptions = {
-    position: 'top-right',
+    position: POSITION.TOP_RIGHT,
     timeout: 3000,
     closeOnClick: true,
     pauseOnFocusLoss: true,

@@ -13,10 +13,10 @@
 </template>
 
 <script setup lang="ts">
-import type { Booking } from '~/schemas'
+import type { EnrichedBooking } from '~/schemas'
 
 type Props = {
-  booking: Booking
+  booking: EnrichedBooking
 }
 
 const props = defineProps<Props>()
@@ -38,7 +38,8 @@ const seatInfo = computed(() => {
     .map(seat => `${seat.seatNumber}`)
     .join(', ')
 
-  const rowNumber = props.booking.seats[0].rowNumber
+  const rowNumber = props.booking.seats[0]?.rowNumber
+  if (!rowNumber) return ''
   return `Ряд ${rowNumber}, места ${seats}`
 })
 

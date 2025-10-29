@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Use existing API to register user (note: backend uses /register not /auth/register)
-    const apiResponse = await $fetch('/register', {
+    const apiResponse = await $fetch<{ token: string }>('/register', {
       baseURL: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3022',
       method: 'POST',
       body: { username, password }
@@ -34,13 +34,22 @@ export default defineEventHandler(async (event) => {
     })
 
     return { success: true }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Registration API error:', error)
+
+    const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
+
     // Get more specific error message if available
-    const errorMessage = error?.data?.message || error?.message || 'Registration failed'
-    
+    const errorMessage = isRecord(error) && isRecord(error.data) && typeof error.data.message === 'string'
+      ? error.data.message
+      : isRecord(error) && typeof error.message === 'string'
+      ? error.message
+      : 'Registration failed'
+
+    const statusCode = isRecord(error) && typeof error.statusCode === 'number' ? error.statusCode : 400
+
     throw createError({
-      statusCode: error?.statusCode || 400,
+      statusCode,
       message: errorMessage
     })
   }

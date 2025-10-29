@@ -64,13 +64,13 @@
 
 <script setup lang="ts">
 import { remainingSeconds, isTimeInFuture, isTimeInPast } from '~/utils/time'
-import type { Booking, Settings } from '~/schemas'
+import type { EnrichedBooking, Settings } from '~/schemas'
 import TicketCard from '~/components/tickets/TicketCard.vue'
 import { useToast } from 'vue-toastification'
 import { useCountdownTimer } from '~/composables/useCountdownTimer'
 
 type Props = {
-  bookings: Booking[]
+  bookings: EnrichedBooking[]
   settings: Settings
   pending: boolean
   error: string | null
@@ -86,8 +86,8 @@ const { now } = useCountdownTimer()
 const { $api } = useNuxtApp()
 const toast = useToast()
 
-const getRemainingSeconds = (booking: Booking): number => {
-  return remainingSeconds(booking.bookedAt, props.settings!.bookingPaymentTimeSeconds, now.value)
+const getRemainingSeconds = (booking: EnrichedBooking): number => {
+  return remainingSeconds(booking.bookedAt, props.settings.bookingPaymentTimeSeconds, now.value)
 }
 
 const formatRemainingTime = (seconds: number): string => {
@@ -99,7 +99,7 @@ const formatRemainingTime = (seconds: number): string => {
 
 
 
-const handlePay = async (booking: Booking) => {
+const handlePay = async (booking: EnrichedBooking) => {
   if (getRemainingSeconds(booking) <= 0) {
     toast.error('Время бронирования истекло')
     return
@@ -116,9 +116,9 @@ const handlePay = async (booking: Booking) => {
 
 
 
-const isUnpaid = (booking: Booking) => !booking.isPaid
-const isUpcoming = (booking: Booking) => booking.isPaid && isTimeInFuture(booking.sessionTime)
-const isPast = (booking: Booking) => booking.isPaid && isTimeInPast(booking.sessionTime)
+const isUnpaid = (booking: EnrichedBooking) => !booking.isPaid
+const isUpcoming = (booking: EnrichedBooking) => booking.isPaid && isTimeInFuture(booking.sessionTime)
+const isPast = (booking: EnrichedBooking) => booking.isPaid && isTimeInPast(booking.sessionTime)
 
 const unpaidBookings = computed(() => props.bookings.filter(isUnpaid))
 const upcomingBookings = computed(() => props.bookings.filter(isUpcoming))
