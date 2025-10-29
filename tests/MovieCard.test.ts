@@ -15,7 +15,6 @@ describe('MovieCard', () => {
     year: 2010
   }
 
-  // Global stubs for all tests
   const globalStubs = {
     BaseButton: {
       template: '<button @click="$emit(\'click\')"><slot /></button>'
@@ -106,11 +105,9 @@ describe('MovieCard', () => {
     await button.trigger('click')
 
     expect(wrapper.emitted()).toHaveProperty('movie-select')
-    // The event might be emitted once or twice depending on stub behavior
     const emittedEvents = wrapper.emitted('movie-select')
     expect(emittedEvents).toBeTruthy()
     expect(emittedEvents!.length).toBeGreaterThanOrEqual(1)
-    // Check that at least one emission has the correct movie ID
     expect(emittedEvents![0]).toEqual([1])
   })
 
@@ -149,7 +146,6 @@ describe('MovieCard', () => {
 
     const img = wrapper.find('img')
     expect(img.exists()).toBe(true)
-    // Should still have src from posterImage or undefined
   })
 
   it('renders as table row element', () => {
@@ -176,6 +172,6 @@ describe('MovieCard', () => {
     })
 
     const cells = wrapper.findAll('td')
-    expect(cells).toHaveLength(5) // poster, title, length, rating, button
+    expect(cells).toHaveLength(5)
   })
 })
