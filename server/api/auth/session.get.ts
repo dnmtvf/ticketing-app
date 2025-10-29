@@ -1,6 +1,10 @@
-import { defineEventHandler, getCookie } from 'h3'
-
 export default defineEventHandler(async (event) => {
-  const token = getCookie(event, 'auth_token')
-  return { loggedIn: Boolean(token) }
+  // Get the current session from nuxt-auth-utils
+  const session = await getUserSession(event)
+  
+  return {
+    loggedIn: !!session.user,
+    username: session.user?.username || null,
+    hasToken: !!session.user?.token
+  }
 })

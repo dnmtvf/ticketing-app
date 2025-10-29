@@ -1,55 +1,29 @@
 <template>
   <div class="flex items-center gap-3 py-3 border-b border-zinc-800">
     <div class="grid">
-      <div>{{ ticketTitle }}</div>
-      <div>{{ cinemaName }}</div>
+      <div>{{ booking.movieName }}</div>
+      <div>{{ booking.cinemaName }}</div>
       <div>{{ sessionTime }}</div>
       <div>{{ seatInfo }}</div>
     </div>
     <div class="grow" />
-    <BaseButton
-      v-if="showPayment"
-      variant="outline"
-      @click="emitPay"
-    >
-      Оплатить
-    </BaseButton>
-    <div v-if="countdownText" class="text-sky-400">
-      Осталось {{ countdownText }}
-    </div>
+    <slot name="actions" />
+    <slot name="countdown" />
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Booking, Settings } from '~/schemas'
+import type { Booking } from '~/schemas'
 
 type Props = {
   booking: Booking
-  settings: Settings | null
-  showPayment?: boolean
-  remainingSeconds?: number
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  showPayment: false,
-  remainingSeconds: 0
-})
+const props = defineProps<Props>()
 
-const emit = defineEmits<{
-  pay: [booking: Booking]
-}>()
 
-const emitPay = () => {
-  if (props.showPayment) {
-    emit('pay', props.booking)
-  }
-}
-
-const ticketTitle = computed(() => props.booking.movieName || props.booking.movie?.title || '')
-const cinemaName = computed(() => props.booking.cinemaName || props.booking.cinema?.name || '')
 const sessionTime = computed(() => {
-  const startAt = props.booking.startAt || props.booking.time || ''
-  return new Date(startAt).toLocaleString('ru-RU', { 
+  return new Date(props.booking.sessionTime).toLocaleString('ru-RU', { 
     hour: '2-digit', 
     minute: '2-digit', 
     day: '2-digit', 
@@ -58,24 +32,16 @@ const sessionTime = computed(() => {
 })
 
 const seatInfo = computed(() => {
-  const seat = props.booking.seats?.[0]
-  if (!seat) return ''
-  
-  if (typeof seat === 'string') {
-    return seat
-  }
-  
-  const row = 'row' in seat ? seat.row : 'rowNumber' in seat ? seat.rowNumber : ''
-  const col = 'col' in seat ? seat.col : 'seatNumber' in seat ? seat.seatNumber : ''
-  
-  return `Ряд ${row}, место ${col}`
+  if (!props.booking.seats.length) return ''
+
+  const seats = props.booking.seats
+    .map(seat => `${seat.seatNumber}`)
+    .join(', ')
+
+  const rowNumber = props.booking.seats[0].rowNumber
+  return `Ряд ${rowNumber}, места ${seats}`
 })
 
-const countdownText = computed(() => {
-  if (!props.remainingSeconds) return ''
-  const minutes = Math.floor(props.remainingSeconds / 60)
-  const seconds = props.remainingSeconds % 60
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
-})
+
 </script>
 

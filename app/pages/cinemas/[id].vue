@@ -1,77 +1,91 @@
+<template>
+  <CinemaSessionsView
+    v-if="cinema"
+    :cinema="cinema"
+    :sessions="sessions"
+    :pending="pending"
+    :error="errorMessage"
+    @session-select="goToSession"
+  />
+  <div v-else-if="errorMessage" class="text-center text-rose-400 mt-8">
+    {{ errorMessage }}
+  </div>
+</template>
+
 <script setup lang="ts">
 import { z } from 'zod'
-import { CinemaSchema, SessionSchema, type Cinema, type Session } from '~/schemas'
+import { CinemaSchema, SessionSchema, MovieSchema, type Movie, type Session } from '~/schemas'
+import CinemaSessionsView from '~/components/cinemas/CinemaSessionsView.vue'
+import { normalizeMovie } from '~/utils/transformers'
+import type { SessionWithMovie } from '~/types/sessions'
+
 const { $api } = useNuxtApp()
+const { public: { apiBase } } = useRuntimeConfig()
 const route = useRoute()
 const id = String(route.params.id)
+const parsingError = ref<string | null>(null)
 
-const cinema = ref<Cinema | null>(null)
-const sessions = ref<Session[]>([])
-const pending = ref(true)
-const error = ref<string | null>(null)
+const { data, pending, error } = await useAsyncData(
+  `cinema-${id}-sessions`,
+  async () => {
+    const [cinemasRes, sessionsRes, moviesRes] = await Promise.all([
+      $api('/api/proxy/cinemas'),
+      $api(`/api/proxy/cinemas/${id}/sessions`),
+      $api('/api/proxy/movies')
+    ])
 
-const groupByDate = (list: Session[]) => {
-  const map: Record<string, Session[]> = {}
-  for (const s of list) {
-    const d = (s.startAt || s.startTime || s.start_time || s.date || '').slice(0, 10)
-    if (!map[d]) map[d] = []
-    map[d].push(s)
+    const cinemasParsed = z.array(CinemaSchema).safeParse(cinemasRes)
+    const sessionsParsed = z.array(SessionSchema).safeParse(sessionsRes)
+    const moviesParsed = z.array(MovieSchema).safeParse(moviesRes)
+
+    if (!cinemasParsed.success) {
+      parsingError.value = 'Не удалось загрузить данные кинотеатра'
+    }
+
+    if (!sessionsParsed.success) {
+      parsingError.value = 'Ошибка загрузки сеансов'
+    }
+
+    if (!moviesParsed.success) {
+      parsingError.value = 'Не удалось загрузить данные фильмов'
+    }
+
+    const cinema = cinemasParsed.success
+      ? cinemasParsed.data.find(c => c.id === Number(id))
+      : undefined
+
+    const moviesById = moviesParsed.success
+      ? Object.fromEntries(
+          moviesParsed.data.map(m => [m.id, normalizeMovie({ movie: m, apiBase })])
+        )
+      : {}
+
+    const sessions = sessionsParsed.success
+      ? sessionsParsed.data
+          .map(session => ({
+            ...session,
+            movie: moviesById[session.movieId]
+          }))
+          .filter((session): session is SessionWithMovie => !!session.movie)
+      : []
+
+    return {
+      cinema,
+      sessions
+    }
   }
-  return map
-}
+)
 
-try {
-  // Get cinema details from cinemas list (since /cinemas/{id} doesn't exist)
-  const cinemas = await $api('/cinemas')
-  const cinemasArray = z.array(CinemaSchema).safeParse(cinemas)
-  
-  if (cinemasArray.success) {
-    // Find the cinema in the list
-    cinema.value = cinemasArray.data.find(c => String(c.id) === id) || null
-  }
-  
-  const sess = await $api(`/cinemas/${id}/sessions`).catch(() => $api(`/cinemas/${id}/session`))
-  const ps = z.array(SessionSchema).safeParse(sess)
-  if (ps.success) sessions.value = ps.data
-  else error.value = 'Ошибка загрузки'
-} catch {
-  error.value = 'Ошибка загрузки'
-} finally {
-  pending.value = false
-}
+const cinema = computed(() => data.value?.cinema)
+const sessions = computed(() => data.value?.sessions ?? [])
+const errorMessage = computed<string | null>(() => {
+  if (error.value?.message) return error.value.message
+  if (parsingError.value) return parsingError.value
+  return null
+})
 
 const goToSession = (session: Session) => {
-  const cinemaId = id
-  const movieId = session.movieId
-  return navigateTo(`/movies/${movieId}/cinemas/${cinemaId}/sessions/${session.id}`)
+  return navigateTo(`/movies/${session.movieId}/cinemas/${id}/sessions/${session.id}`)
 }
 </script>
-
-<template>
-  <article aria-labelledby="cinema-title">
-    <h1 id="cinema-title" class="text-2xl font-semibold mb-4">Кинотеатр</h1>
-    <div v-if="pending">Загрузка…</div>
-    <div v-else-if="error">{{ error }}</div>
-    <div v-else>
-      <section v-if="cinema" class="mb-4">
-        <h2 class="text-xl font-medium">{{ cinema.name }}</h2>
-        <div class="text-zinc-300">{{ cinema.address }}</div>
-      </section>
-
-      <section v-for="(list, date) in groupByDate(sessions)" :key="date" class="border-t border-zinc-700 pt-3 mt-3">
-        <h3 class="font-semibold mb-2">{{ date }}</h3>
-        <div class="flex flex-wrap gap-2">
-          <BaseButton
-            v-for="s in list"
-            :key="s.id"
-            variant="outline"
-            @click="goToSession(s)"
-          >
-            {{ (s.startAt || s.startTime || s.start_time || '').slice(11,16) }} — {{ s.movieName || s.movie?.title }}
-          </BaseButton>
-        </div>
-      </section>
-    </div>
-  </article>
-</template>
 

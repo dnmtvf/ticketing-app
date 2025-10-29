@@ -4,7 +4,7 @@ import { CinemaSchema, type Cinema } from '~/schemas'
 const { $api } = useNuxtApp()
 const state = reactive<{ pending: boolean; error: string; cinemas: Cinema[] }>({ pending: true, error: '', cinemas: [] })
 try {
-  const res = await $api('/cinemas')
+  const res = await $api('/api/proxy/cinemas')
   const parsed = z.array(CinemaSchema).safeParse(res)
   if (!parsed.success) {
     state.error = 'Ошибка загрузки кинотеатров'

@@ -40,29 +40,33 @@ export const SessionDetailSchema = z.object({
 })
 
 export const BookingSchema = z.object({
-  id: z.number(),
-  movieId: z.number(),
-  cinemaId: z.number(),
+  id: z.union([z.string(), z.number()]),
+  movieSessionId: z.number(),
+  userId: z.number(),
+  isPaid: z.boolean(),
+  seats: z.array(z.object({
+    rowNumber: z.number(),
+    seatNumber: z.number()
+  })),
+  bookedAt: z.string()
+})
+
+export const EnrichedBookingSchema = BookingSchema.extend({
   movieName: z.string(),
+  moviePoster: z.string(),
+  lengthMinutes: z.number(),
   cinemaName: z.string(),
-  startAt: z.string(),
-  seats: z.array(z.union([
-    z.string(),
-    z.object({ row: z.number(), col: z.number() }),
-    z.object({ rowNumber: z.number(), seatNumber: z.number() })
-  ])),
-  status: z.enum(['unpaid','paid','upcoming','past','expired']),
-  bookedAt: z.string(),
-  price: z.number()
+  sessionTime: z.string()
 })
 
 export const SettingsSchema = z.object({
-  paymentTimeoutSeconds: z.number()
-}).or(z.object({ bookingPaymentTimeSeconds: z.number() }))
+  bookingPaymentTimeSeconds: z.number()
+})
 
 export type Movie = z.infer<typeof MovieSchema>
 export type Cinema = z.infer<typeof CinemaSchema>
 export type Session = z.infer<typeof SessionSchema>
 export type SessionDetail = z.infer<typeof SessionDetailSchema>
 export type Booking = z.infer<typeof BookingSchema>
+export type EnrichedBooking = z.infer<typeof EnrichedBookingSchema>
 export type Settings = z.infer<typeof SettingsSchema>

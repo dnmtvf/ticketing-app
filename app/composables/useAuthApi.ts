@@ -24,36 +24,36 @@ export const useAuthApi = () => {
 
   const login = async (payload: LoginPayload): Promise<LoginResponse> => {
     try {
-      await $api('/api/auth/login', { 
-        method: 'POST', 
-        body: { 
-          username: payload.username, 
-          password: payload.password 
-        } 
+      await $api('/api/auth/login', {
+        method: 'POST',
+        body: {
+          username: payload.username,
+          password: payload.password
+        }
       })
       return { success: true }
     } catch {
-      return { 
-        success: false, 
-        message: 'Неверный логин или пароль. Проверьте введенные данные и попробуйте снова' 
+      return {
+        success: false,
+        message: 'Неверный логин или пароль. Проверьте введенные данные и попробуйте снова'
       }
     }
   }
 
   const register = async (payload: RegisterPayload): Promise<RegisterResponse> => {
     try {
-      await $api('/api/auth/register', { 
-        method: 'POST', 
-        body: { 
-          username: payload.username, 
-          password: payload.password 
-        } 
+      await $api('/api/auth/register', {
+        method: 'POST',
+        body: {
+          username: payload.username,
+          password: payload.password
+        }
       })
       return { success: true }
     } catch {
-      return { 
-        success: false, 
-        message: 'Ошибка регистрации' 
+      return {
+        success: false,
+        message: 'Ошибка регистрации'
       }
     }
   }

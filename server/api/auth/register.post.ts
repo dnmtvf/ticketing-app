@@ -1,48 +1,47 @@
-import { defineEventHandler, readBody, setCookie } from 'h3'
+import { z } from 'zod'
+
+const bodySchema = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+  passwordConfirmation: z.string().min(1)
+})
 
 export default defineEventHandler(async (event) => {
-  const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
-  const config = useRuntimeConfig(event)
-  const body = await readBody<{ username: string; password: string; passwordConfirmation?: string }>(event)
-  const username = body?.username
-  const password = body?.password
-  const passwordConfirmation = body?.passwordConfirmation
-  if (!username || !password) {
-    throw createError({ statusCode: 400, statusMessage: 'Требуется имя пользователя и пароль' })
+  const { username, password, passwordConfirmation } = await readValidatedBody(event, bodySchema.parse)
+
+  if (password !== passwordConfirmation) {
+    throw createError({
+      statusCode: 400,
+      message: 'Password confirmation does not match'
+    })
   }
 
   try {
-    const res = await $fetch<{ token: string }>(`${config.public.apiBase}/register`, {
+    // Use existing API to register user (note: backend uses /register not /auth/register)
+    const apiResponse = await $fetch('/register', {
+      baseURL: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3022',
       method: 'POST',
-      body: passwordConfirmation ? { username, password, passwordConfirmation } : { username, password },
+      body: { username, password }
     })
-    const token = res?.token
-    if (!token) throw new Error('No token in response')
 
-    setCookie(event, 'auth_token', token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60,
+    // Set the user session in the cookie using nuxt-auth-utils
+    await setUserSession(event, {
+      user: {
+        username,
+        // Store the token for future API calls
+        token: apiResponse.token
+      }
     })
-    return { ok: true }
-  } catch (e) {
-    const statusCode = (() => {
-      if (isRecord(e) && isRecord(e.response)) {
-        const st = e.response.status
-        if (typeof st === 'number') return st
-      }
-      if (isRecord(e) && typeof e.statusCode === 'number') return e.statusCode
-      return 500
-    })()
-    const message = (() => {
-      if (isRecord(e) && isRecord(e.response) && isRecord(e.response._data)) {
-        const msg = e.response._data.message
-        if (typeof msg === 'string') return msg
-      }
-      return 'Ошибка регистрации'
-    })()
-    throw createError({ statusCode, statusMessage: message })
+
+    return { success: true }
+  } catch (error) {
+    console.error('Registration API error:', error)
+    // Get more specific error message if available
+    const errorMessage = error?.data?.message || error?.message || 'Registration failed'
+    
+    throw createError({
+      statusCode: error?.statusCode || 400,
+      message: errorMessage
+    })
   }
 })

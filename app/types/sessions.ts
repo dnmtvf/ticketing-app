@@ -1,4 +1,4 @@
-import type { SessionDetail } from '~/schemas'
+import type { SessionDetail, Session, Movie } from '~/schemas'
 
 /**
  * Session data enriched with movie and cinema names
@@ -7,4 +7,11 @@ import type { SessionDetail } from '~/schemas'
 export type EnrichedSession = SessionDetail & {
   movieName: string
   cinemaName: string
+}
+
+/**
+ * Session with full movie data for displaying cinema sessions grouped by movie
+ */
+export type SessionWithMovie = Session & {
+  movie: Movie
 }

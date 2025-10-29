@@ -3,7 +3,11 @@ import { defineEventHandler, getCookie, getQuery, readBody, getRequestURL } from
 export default defineEventHandler(async (event) => {
   const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
   const config = useRuntimeConfig(event)
-  const token = getCookie(event, 'auth_token')
+  
+  // Get token from nuxt-auth-utils session
+  const session = await getUserSession(event)
+  const token = session?.user?.token || null
+  
   const urlObj = getRequestURL(event)
   const pathname = urlObj.pathname.startsWith('/api/proxy') ? urlObj.pathname.slice('/api/proxy'.length) || '/' : urlObj.pathname
   const url = `${config.public.apiBase}${pathname}`

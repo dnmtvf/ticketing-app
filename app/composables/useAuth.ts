@@ -10,28 +10,27 @@ export interface RegisterPayload {
 }
 
 export const useAuth = () => {
-  const loggedIn = useState<boolean>('auth:loggedIn', () => false)
-  const username = useState<string | null>('auth:username', () => null)
-  const loading = useState<boolean>('auth:loading', () => false)
-  const error = useState<string | null>('auth:error', () => null)
-
-  const authApi = useAuthApi()
+  // Use the official nuxt-auth-utils composable
+  const { loggedIn, user, session, fetch: refreshSession, clear: clearSession } = useUserSession()
+  
+  // Local loading and error states
+  const loading = ref(false)
+  const error = ref<string | null>(null)
 
   const login = async (payload: LoginPayload): Promise<boolean> => {
     loading.value = true
     error.value = null
     
     try {
-      const result = await authApi.login(payload)
-      if (result.success) {
-        loggedIn.value = true
-        username.value = payload.username
-        return true
-      } else {
-        error.value = result.message || 'Ошибка входа'
-        return false
-      }
-    } catch {
+      await $fetch('/api/auth/login', {
+        method: 'POST',
+        body: payload
+      })
+
+      // Refresh the session after successful login
+      await refreshSession()
+      return true
+    } catch (err) {
       error.value = 'Неверный логин или пароль. Проверьте введенные данные и попробуйте снова'
       return false
     } finally {
@@ -44,16 +43,15 @@ export const useAuth = () => {
     error.value = null
     
     try {
-      const result = await authApi.register(payload)
-      if (result.success) {
-        loggedIn.value = true
-        username.value = payload.username
-        return true
-      } else {
-        error.value = result.message || 'Ошибка регистрации'
-        return false
-      }
-    } catch {
+      await $fetch('/api/auth/register', {
+        method: 'POST',
+        body: payload
+      })
+
+      // Refresh the session after successful registration
+      await refreshSession()
+      return true
+    } catch (err) {
       error.value = 'Ошибка регистрации'
       return false
     } finally {
@@ -65,30 +63,17 @@ export const useAuth = () => {
     loading.value = true
     
     try {
-      await authApi.logout()
+      await $fetch('/api/auth/logout', {
+        method: 'POST'
+      })
     } finally {
-      loggedIn.value = false
-      username.value = null
+      await clearSession()
       loading.value = false
     }
   }
 
-  const refresh = async (): Promise<boolean> => {
-    try {
-      const session = await authApi.getSession()
-      if (session) {
-        loggedIn.value = Boolean(session.loggedIn)
-        username.value = session.username || null
-        return true
-      }
-      loggedIn.value = false
-      return false
-    } catch {
-      loggedIn.value = false
-      username.value = null
-      return false
-    }
-  }
+  // Computed properties for compatibility with existing code
+  const username = computed(() => user.value?.username || null)
 
   return { 
     loggedIn, 
@@ -98,6 +83,6 @@ export const useAuth = () => {
     login, 
     register, 
     logout, 
-    refresh 
+    refresh: refreshSession 
   }
 }

@@ -28,3 +28,25 @@ export function formatSessionTime(isoString: string): string {
   
   return `${hours}:${minutes}`
 }
+
+/**
+ * Formats ISO date string to DD.MM format
+ * @param isoString - ISO 8601 date string
+ * @returns Formatted date string (DD.MM)
+ */
+export function formatDateShort(isoString: string): string {
+  const date = new Date(isoString)
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  
+  return `${day}.${month}`
+}
+
+/**
+ * Extracts date part from ISO datetime string (YYYY-MM-DD)
+ * @param isoString - ISO 8601 datetime string
+ * @returns Date string (YYYY-MM-DD)
+ */
+export function getDatePart(isoString: string): string {
+  return isoString.slice(0, 10)
+}

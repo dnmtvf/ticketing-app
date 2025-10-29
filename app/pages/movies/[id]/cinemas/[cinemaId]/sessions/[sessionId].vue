@@ -11,6 +11,7 @@
 <script setup lang="ts">
 import { SessionDetailSchema, MovieSchema, CinemaSchema } from '~/schemas'
 import { z } from 'zod'
+import { useToast } from 'vue-toastification'
 import SessionSeatSelection from '~/components/sessions/SessionSeatSelection.vue'
 import type { EnrichedSession } from '~/types/sessions'
 
@@ -25,9 +26,9 @@ const { data: sessionData, pending, error } = await useAsyncData<EnrichedSession
   async () => {
     // NOTE: Backend lacks a /movies/{id} endpoint, so we fetch the list and filter client-side.
     const [sessionData, movies, cinemas] = await Promise.all([
-      $api(`/movieSessions/${route.params.sessionId}`),
-      $api('/movies'),
-      $api('/cinemas')
+      $api(`/api/proxy/movieSessions/${route.params.sessionId}`),
+      $api('/api/proxy/movies'),
+      $api('/api/proxy/cinemas')
     ])
 
     const sessionParse = SessionDetailSchema.safeParse(sessionData)
@@ -81,16 +82,16 @@ const handleBooking = async (seats: Array<{ rowNumber: number; seatNumber: numbe
   
   const toast = useToast()
   try {
-    await $api(`/movieSessions/${route.params.sessionId}/bookings`, { 
+    await $api(`/api/proxy/movieSessions/${route.params.sessionId}/bookings`, { 
       method: 'POST', 
       body: { seats } 
     })
     
-    toast.add({ title: 'Места забронированы' })
+    toast.success('Места забронированы')
     await navigateTo('/tickets')
   } catch {
-    await $api(`/movieSessions/${route.params.sessionId}`)
-    toast.add({ title: 'Не удалось забронировать места', color: 'error' })
+    await $api(`/api/proxy/movieSessions/${route.params.sessionId}`)
+    toast.error('Не удалось забронировать места')
   }
 }
 </script>

@@ -33,9 +33,9 @@ const { data: movieSessionsData, pending, error } = await useAsyncData<MovieSess
   async () => {
     // NOTE: Backend lacks a /movies/{id} endpoint, so we fetch the list and filter client-side.
     const [movies, sess, cinemas] = await Promise.all([
-      $api('/movies'),
-      $api(`/movies/${id}/sessions`),
-      $api('/cinemas')
+      $api('/api/proxy/movies'),
+      $api(`/api/proxy/movies/${id}/sessions`),
+      $api('/api/proxy/cinemas')
     ])
 
     const movieParse = z.array(MovieSchema).safeParse(movies)

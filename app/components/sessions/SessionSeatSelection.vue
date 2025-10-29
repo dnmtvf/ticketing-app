@@ -16,11 +16,11 @@
           <button
             v-for="c in cols"
             :key="c"
-            class="w-10 h-10 rounded border-2 border-white cursor-pointer transition-colors"
+            class="w-10 h-10 rounded border-2 border-white transition-colors"
             :class="{
-              'bg-sky-700 border-sky-400': isSeatSelected(r,c) && !isSeatBooked(r,c),
+              'bg-sky-700 border-sky-400 cursor-pointer': isSeatSelected(r,c) && !isSeatBooked(r,c),
               'bg-rose-400 border-rose-400 opacity-60 cursor-not-allowed': isSeatBooked(r,c),
-              'bg-black hover:bg-zinc-800': !isSeatSelected(r,c) && !isSeatBooked(r,c)
+              'bg-black hover:bg-zinc-800 cursor-pointer': !isSeatSelected(r,c) && !isSeatBooked(r,c)
             }"
             @click="toggleSeat(r,c)"
             :disabled="isSeatBooked(r,c)"

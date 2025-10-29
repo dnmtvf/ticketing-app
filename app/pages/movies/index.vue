@@ -23,7 +23,7 @@ const parsingError = ref<string | null>(null)
 const { data: moviesData, pending, error } = await useAsyncData<Movie[]>(
   'movies',
   async () => {
-    const res = await $api('/movies')
+    const res = await $api('/api/proxy/movies')
     const parsed = moviesResponseSchema.safeParse(res)
     if (!parsed.success) {
       parsingError.value = 'Не удалось обработать данные фильмов'

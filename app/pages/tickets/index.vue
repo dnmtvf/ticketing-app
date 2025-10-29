@@ -1,130 +1,113 @@
 <template>
-  <section aria-labelledby="tickets-title">
-    <h1 id="tickets-title" class="text-2xl font-semibold mb-4">Мои билеты</h1>
-    <div v-if="pending">Загрузка…</div>
-    <div v-else-if="error">{{ error }}</div>
-    <div v-else class="grid gap-6">
-      <section>
-        <h2 class="text-xl font-medium mb-2">Неоплаченные</h2>
-        <div v-if="!unpaidBookings.length" class="text-zinc-300">Нет неоплаченных билетов</div>
-        <TicketCard
-          v-for="booking in unpaidBookings"
-          :key="booking.id"
-          :booking="booking"
-          :settings="settings"
-          :show-payment="true"
-          :remaining-seconds="getRemainingSeconds(booking)"
-          @pay="handlePay"
-        />
-      </section>
-
-      <section>
-        <h2 class="text-xl font-medium mb-2">Будущие</h2>
-        <div v-if="!upcomingBookings.length" class="text-zinc-300">Нет будущих билетов</div>
-        <TicketCard
-          v-for="booking in upcomingBookings"
-          :key="booking.id"
-          :booking="booking"
-          :settings="settings"
-        />
-      </section>
-
-      <section>
-        <h2 class="text-xl font-medium mb-2">Прошедшие</h2>
-        <div v-if="!pastBookings.length" class="text-zinc-300">Нет прошедших билетов</div>
-        <TicketCard
-          v-for="booking in pastBookings"
-          :key="booking.id"
-          :booking="booking"
-          :settings="settings"
-        />
-      </section>
-    </div>
-  </section>
+  <TicketsView 
+    :bookings="bookings" 
+    :settings="settings" 
+    :pending="pending" 
+    :error="errorMessage"
+    @refresh="refreshData" 
+  />
 </template>
 
 <script setup lang="ts">
-import { remainingSeconds } from '~/utils/time'
-import type { Booking, Settings } from '~/schemas'
-import TicketCard from '~/components/tickets/TicketCard.vue'
+import { z } from 'zod'
+import { SettingsSchema, BookingSchema, EnrichedBookingSchema, MovieSchema, CinemaSchema, SessionDetailSchema, type Booking, type EnrichedBooking, type Settings } from '~/schemas'
+import TicketsView from '~/components/tickets/TicketsView.vue'
 
 definePageMeta({ middleware: 'auth' })
 
-import { z } from 'zod'
-import { SettingsSchema, BookingSchema } from '~/schemas'
-
 const { $api } = useNuxtApp()
+const parsingError = ref<string | null>(null)
 
-const settings = ref<Settings | null>(null)
-const bookings = ref<Booking[]>([])
-const pending = ref(true)
-const error = ref<string | null>(null)
+const { data: ticketsData, pending, error, refresh: refreshData } = await useAsyncData<{
+  settings: Settings | null
+  bookings: Booking[] | undefined
+}>('tickets', async () => {
+  const [settingsRes, bookingsRes, moviesRes, cinemasRes] = await Promise.all([
+    $api('/api/proxy/settings'),
+    $api('/api/proxy/me/bookings'),
+    $api('/api/proxy/movies'),
+    $api('/api/proxy/cinemas')
+  ])
 
-const load = async () => {
-  pending.value = true
-  try {
-    const [s, b] = await Promise.all([
-      $api('/settings'),
-      $api('/me/bookings')
-    ])
-    const ps = SettingsSchema.safeParse(s)
-    settings.value = ps.success ? ps.data : null
-    const pb = z.array(BookingSchema).safeParse(b)
-    bookings.value = pb.success ? pb.data : []
-  } catch {
-    error.value = 'Ошибка загрузки'
-  } finally {
-    pending.value = false
+  const settingsParsed = SettingsSchema.safeParse(settingsRes)
+  const bookingsParsed = z.array(BookingSchema).safeParse(bookingsRes)
+  const moviesParsed = z.array(MovieSchema).safeParse(moviesRes)
+  const cinemasParsed = z.array(CinemaSchema).safeParse(cinemasRes)
+
+  if (!settingsParsed.success) {
+    parsingError.value = 'Не удалось загрузить настройки'
   }
-}
+  if (!bookingsParsed.success) {
+    parsingError.value = 'Не удалось загрузить билеты'
+  }
+  if (!moviesParsed.success) {
+    parsingError.value = 'Не удалось загрузить фильмы'
+  }
+  if (!cinemasParsed.success) {
+    parsingError.value = 'Не удалось загрузить кинотеатры'
+  }
 
-await load()
+  const movies = moviesParsed.success ? moviesParsed.data : []
+  const cinemas = cinemasParsed.success ? cinemasParsed.data : []
 
-const now = ref(Date.now())
-let timer: ReturnType<typeof setInterval> | undefined
-onMounted(() => { timer = setInterval(() => (now.value = Date.now()), 1000) })
-onBeforeUnmount(() => { if (timer) clearInterval(timer) })
+  let sessionsData: unknown[] = []
+  try {
+    if (bookingsParsed.success) {
+      sessionsData = await Promise.all(
+        bookingsParsed.data.map(booking => 
+          $api(`/api/proxy/movieSessions/${booking.movieSessionId}`)
+        )
+      )
+    }
+  } catch {
+    parsingError.value = 'Не удалось загрузить данные сеансов'
+  }
 
-const getRemainingSeconds = (booking: Booking): number => {
-  const timeout = settings.value && 'paymentTimeoutSeconds' in settings.value
-    ? settings.value.paymentTimeoutSeconds
-    : settings.value && 'bookingPaymentTimeSeconds' in settings.value
-      ? settings.value.bookingPaymentTimeSeconds
-      : 0
+  const sessionsParsed = sessionsData.map(data => SessionDetailSchema.safeParse(data))
+  
+  const movieMap = new Map(movies.map(m => [m.id, m]))
+  const cinemaMap = new Map(cinemas.map(c => [c.id, c]))
+  const sessionsMap = new Map(sessionsParsed
+    .filter(s => s.success)
+    .map(session => [session.data.id, session]))
+  
+  let enrichedBookings: EnrichedBooking[] = []
+  
+  if (bookingsParsed.success && sessionsData.length === bookingsParsed.data.length) {
+    enrichedBookings = bookingsParsed.data.map(booking => {
+      const session = sessionsMap.get(booking.movieSessionId)
       
-  return remainingSeconds(booking.bookedAt || booking.createdAt || Date.now(), timeout, now.value)
-}
-
-watchEffect(() => {
-  const timeout = settings.value && 'paymentTimeoutSeconds' in settings.value
-    ? settings.value.paymentTimeoutSeconds
-    : settings.value && 'bookingPaymentTimeSeconds' in settings.value
-      ? settings.value.bookingPaymentTimeSeconds
-      : undefined
+      if (!session) {
+        parsingError.value = 'Не удалось загрузить данные сеанса'
+        return null
+      }
       
-  if (!timeout) return
-  const before = bookings.value.length
-  bookings.value = bookings.value.filter(b => !(b.status === 'unpaid' && getRemainingSeconds(b) <= 0))
-  if (bookings.value.length !== before) { load() }
+      const movie = movieMap.get(booking.movieSessionId)
+      const cinema = cinemaMap.get(session.data.cinemaId)
+      
+      return {
+        ...booking,
+        movieName: movie?.title || '',
+        moviePoster: movie?.posterImage || '',
+        lengthMinutes: movie?.lengthMinutes || 0,
+        cinemaName: cinema?.name || '',
+        sessionTime: session.data.startTime || ''
+      }
+    }).filter(Boolean)
+  }
+
+  return {
+    settings: settingsParsed.success ? settingsParsed.data : null,
+    bookings: enrichedBookings
+  }
 })
 
-const handlePay = async (booking: Booking) => {
-  const toast = useToast()
-  try {
-    await $api(`/bookings/${booking.id}/payments`, { method: 'POST' })
-    toast.add({ title: 'Билет оплачен' })
-    await load()
-  } catch {
-    toast.add({ title: 'Не удалось оплатить билет', color: 'rose' })
-  }
-}
-
-const isUnpaid = (booking: Booking) => booking.status ? booking.status === 'unpaid' : booking.isPaid === false
-const isUpcoming = (booking: Booking) => booking.status ? (booking.status === 'paid' || booking.status === 'upcoming') : booking.isPaid === true
-const isPast = (booking: Booking) => booking.status ? (booking.status === 'past' || booking.status === 'expired') : false
-
-const unpaidBookings = computed(() => bookings.value.filter(isUnpaid))
-const upcomingBookings = computed(() => bookings.value.filter(isUpcoming))
-const pastBookings = computed(() => bookings.value.filter(isPast))
+const settings = computed<Settings | null>(() => ticketsData.value?.settings ?? null)
+const bookings = computed<Booking[]>(() => ticketsData.value?.bookings ?? [])
+const errorMessage = computed<string | null>(() => {
+  if (error.value?.message) return error.value.message
+  if (parsingError.value) return parsingError.value
+  return null
+})
 </script>
 
