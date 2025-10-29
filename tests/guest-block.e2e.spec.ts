@@ -17,23 +17,24 @@ test('guest cannot book; redirect to login', async ({ page, baseURL, request }) 
   expect(sessionUrl, 'expected at least one session').toBeTruthy()
   await page.goto(`${baseURL}${sessionUrl}`)
 
-  // Select first free seat and wait until pressed
-  // Try multiple seats until book button becomes enabled
-  const bookBtn = page.getByRole('button', { name: 'Забронировать' })
-  const seats = page.locator('button[aria-label^="Ряд "]:not([disabled])')
-  const count = await seats.count()
-  let enabled = false
-  for (let i = 0; i < Math.min(count, 10); i++) {
-    const s = seats.nth(i)
-    await s.scrollIntoViewIfNeeded()
-    await s.click()
-    enabled = await bookBtn.isEnabled().catch(() => false)
-    if (enabled) break
-  }
-  expect(enabled).toBeTruthy()
+  // Wait for page to be fully hydrated - wait for seat grid to be interactive
+  const seat = page.locator('button[aria-label^="Ряд "]:not([disabled])').first()
+  await seat.waitFor({ state: 'visible' })
 
-  // Try to book
-  await expect(bookBtn).toBeEnabled()
+  // Ensure the component is hydrated by waiting for aria-pressed attribute to exist
+  await expect(seat).toHaveAttribute('aria-pressed', /^(true|false)$/, { timeout: 5000 })
+
+  // Click the seat to select it - retry until aria-pressed changes to "true"
+  // This works around a Vue hydration timing issue where the first click doesn't register
+  await expect(async () => {
+    await seat.click()
+    await page.waitForTimeout(100)
+    await expect(seat).toHaveAttribute('aria-pressed', 'true')
+  }).toPass({ timeout: 10000 })
+
+  // Book button should now be enabled
+  const bookBtn = page.getByRole('button', { name: 'Забронировать' })
+  await expect(bookBtn).toBeEnabled({ timeout: 5000 })
   await bookBtn.click()
 
   // Expect redirect to login with redirect param
