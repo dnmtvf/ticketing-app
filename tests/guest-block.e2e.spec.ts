@@ -4,17 +4,18 @@ test('guest cannot book; redirect to login', async ({ page, baseURL, request }) 
   // Navigate directly to an available session via API to reduce flakiness
   const moviesRes = await request.get(`${baseURL}/api/proxy/movies`)
   const movies: { id: number | string }[] = await moviesRes.json()
-  let sessionId: number | string | undefined
+  let sessionUrl: string | undefined
   for (const m of movies) {
     const sessRes = await request.get(`${baseURL}/api/proxy/movies/${m.id}/sessions`)
-    const sessions: { id: number | string }[] = await sessRes.json()
+    const sessions: { id: number | string; cinemaId: number | string }[] = await sessRes.json()
     if (Array.isArray(sessions) && sessions.length) {
-      sessionId = sessions[0].id
+      const session = sessions[0]
+      sessionUrl = `/movies/${m.id}/cinemas/${session.cinemaId}/sessions/${session.id}`
       break
     }
   }
-  expect(sessionId, 'expected at least one session').toBeTruthy()
-  await page.goto(`${baseURL}/sessions/${sessionId}`)
+  expect(sessionUrl, 'expected at least one session').toBeTruthy()
+  await page.goto(`${baseURL}${sessionUrl}`)
 
   // Select first free seat and wait until pressed
   // Try multiple seats until book button becomes enabled

@@ -46,7 +46,8 @@ export const useAuthApi = () => {
         method: 'POST',
         body: {
           username: payload.username,
-          password: payload.password
+          password: payload.password,
+          passwordConfirmation: payload.passwordConfirmation
         }
       })
       return { success: true }

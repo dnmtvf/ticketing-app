@@ -10,37 +10,33 @@ test('registration → booking → payment', async ({ page, baseURL, request, co
   const username = uniqueUser()
   const password = 'Abcdefg1'
 
-  // Register via API (stabilize against flaky UI/back-end 409)
-  let token: string | undefined
-  for (let attempt = 0; attempt < 3 && !token; attempt++) {
-    const uname = attempt === 0 ? username : uniqueUser()
-    const apiRes = await request.post(`${baseURL}/api/auth/register`, {
-      data: { username: uname, password, passwordConfirmation: password }
-    })
-    if (!apiRes.ok()) continue
-    const setCookie = apiRes.headers()['set-cookie'] || apiRes.headers()['Set-Cookie']
-    const tokenMatch = String(setCookie).match(/auth_token=([^;]+)/)
-    if (tokenMatch) token = tokenMatch[1]
-  }
-  expect(token).toBeTruthy()
-  await context.addCookies([{ name: 'auth_token', value: token, domain: 'localhost', path: '/', sameSite: 'Lax', httpOnly: true }])
+  // Register via UI to get proper session cookie
+  await page.goto(`${baseURL}/register`)
+  await page.getByLabel('Логин').fill(username)
+  await page.getByLabel('Пароль').fill(password)
+  await page.getByLabel('Подтверждение пароля').fill(password)
+  await page.getByRole('button', { name: 'Зарегистрироваться' }).click()
+
+  // Wait for redirect after successful registration
+  await page.waitForURL(/\/(movies|tickets)/, { timeout: 5000 })
   await page.goto(`${baseURL}/tickets`)
   await expect(page.getByRole('heading', { name: 'Мои билеты' })).toBeVisible()
 
   // Use API to find an available session and go directly
   const moviesRes = await request.get(`${baseURL}/api/proxy/movies`)
   const movies: { id: number | string }[] = await moviesRes.json()
-  let sessionId: number | string | undefined
+  let sessionUrl: string | undefined
   for (const m of movies) {
     const sessRes = await request.get(`${baseURL}/api/proxy/movies/${m.id}/sessions`)
-    const sessions: { id: number | string }[] = await sessRes.json()
+    const sessions: { id: number | string; cinemaId: number | string }[] = await sessRes.json()
     if (Array.isArray(sessions) && sessions.length) {
-      sessionId = sessions[0].id
+      const session = sessions[0]
+      sessionUrl = `/movies/${m.id}/cinemas/${session.cinemaId}/sessions/${session.id}`
       break
     }
   }
-  expect(sessionId).toBeTruthy()
-  await page.goto(`${baseURL}/sessions/${sessionId}`)
+  expect(sessionUrl).toBeTruthy()
+  await page.goto(`${baseURL}${sessionUrl}`)
 
   // Select first free seat and wait until pressed
   const seat = page.locator('button[aria-label^="Ряд "]:not([disabled])').first()

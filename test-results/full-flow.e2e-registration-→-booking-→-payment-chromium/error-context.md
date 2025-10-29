@@ -1,0 +1,59 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - navigation "Основная навигация" [ref=e5]:
+        - list [ref=e6]:
+          - listitem [ref=e7]:
+            - link "Фильмы" [ref=e8] [cursor=pointer]:
+              - /url: /movies
+          - listitem [ref=e9]:
+            - link "Кинотеатры" [ref=e10] [cursor=pointer]:
+              - /url: /cinemas
+          - listitem [ref=e11]:
+            - link "Мои билеты" [ref=e12] [cursor=pointer]:
+              - /url: /tickets
+          - listitem [ref=e13]:
+            - link "Вход" [ref=e14] [cursor=pointer]:
+              - /url: /login
+    - main [ref=e15]:
+      - alert [ref=e16]
+      - region "Регистрация" [ref=e17]:
+        - heading "Регистрация" [level=1] [ref=e18]
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - generic [ref=e21]: Логин
+            - textbox "Логин" [ref=e22]:
+              - /placeholder: Введите логин
+          - generic [ref=e23]:
+            - generic [ref=e24]: Пароль
+            - textbox "Пароль" [ref=e25]:
+              - /placeholder: Введите пароль
+          - generic [ref=e26]:
+            - generic [ref=e27]: Подтверждение пароля
+            - textbox "Подтверждение пароля" [ref=e28]:
+              - /placeholder: Подтвердите пароль
+          - button "Зарегистрироваться" [ref=e29] [cursor=pointer]
+        - paragraph [ref=e30]:
+          - text: Если вы уже зарегистрированы
+          - link "войдите" [ref=e31] [cursor=pointer]:
+            - /url: /login
+  - generic:
+    - img
+  - generic:
+    - generic:
+      - generic:
+        - button "Go to parent" [disabled]
+        - button "Open in editor"
+        - button "Close"
+  - generic [ref=e32]:
+    - button "Toggle Nuxt DevTools" [ref=e33] [cursor=pointer]:
+      - img [ref=e34]
+    - generic "Page load time" [ref=e37]:
+      - generic [ref=e38]: "16"
+      - generic [ref=e39]: ms
+    - button "Toggle Component Inspector" [ref=e41] [cursor=pointer]:
+      - img [ref=e42]
+```
