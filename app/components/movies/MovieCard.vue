@@ -16,7 +16,7 @@
     <td class="py-2">{{ rating }}</td>
     <td class="py-2">
       <button 
-        class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800" 
+        class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800 cursor-pointer" 
         @click="$emit('movie-select', movie.id)"
       >
         Посмотреть сеансы
@@ -34,7 +34,6 @@ type Props = {
 
 const { movie } = defineProps<Props>()
 
-// Destructure nested properties with defaults
 const { 
   posterFullUrl, 
   title, 

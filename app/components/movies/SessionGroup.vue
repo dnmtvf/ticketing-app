@@ -9,10 +9,10 @@
       <div class="min-w-48">{{ cinema }}</div>
       <div class="flex flex-wrap gap-2">
         <button 
-          v-for="session in sessionsForCinema(date, cinema)" 
+          v-for="session in sessionsForCinema(cinema)" 
           :key="session.id" 
-          @click="$emit('goToSession', session.id)" 
-          class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800"
+          @click="emit('go-to-session', { sessionId: session.id, cinemaId: session.cinemaId })" 
+          class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800 cursor-pointer"
         >
           {{ getSessionTime(session) }}
         </button>
@@ -22,43 +22,30 @@
 </template>
 
 <script setup lang="ts">
-import type { Session } from '~/schemas'
+import { computed } from 'vue'
+import type { SessionWithCinema } from '~/types/movies'
 
 type Props = {
   date: string
-  sessions: Session[]
+  sessions: SessionWithCinema[]
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
-defineEmits<{
-  goToSession: [id: number]
+const emit = defineEmits<{
+  'go-to-session': [{ sessionId: number; cinemaId: number }]
 }>()
 
-const sessionsForDate = computed(() => {
-  return props.sessions.filter(s => {
-    const sessionDate = (s.startAt || s.startTime || s.start_time || '').slice(0, 10)
-    return sessionDate === props.date
-  })
-})
-
 const cinemasForDate = computed(() => {
-  return [...new Set(sessionsForDate.value.map(s => {
-    // Try multiple possible cinema name fields
-    return s.cinemaName || s.cinema?.name || `Кинотеатр ${s.cinemaId || 'Неизвестный'}`
-  }))]
+  const names = props.sessions.map(session => session.cinema.name)
+  return [...new Set(names)]
 })
 
-const sessionsForCinema = (date: string, cinema: string) => {
-  return props.sessions.filter(s => {
-    const sessionDate = (s.startAt || s.startTime || s.start_time || '').slice(0, 10)
-    const sessionCinemaName = s.cinemaName || s.cinema?.name || `Кинотеатр ${s.cinemaId || 'Неизвестный'}`
-    return sessionDate === date && sessionCinemaName === cinema
-  })
+const sessionsForCinema = (cinema: string) => {
+  return props.sessions.filter(session => session.cinema.name === cinema)
 }
 
-const getSessionTime = (session: Session) => {
-  const startTime = session.startAt || session.startTime || session.start_time || ''
-  return startTime.slice(11, 16)
+const getSessionTime = (session: SessionWithCinema) => {
+  return session.startTime.slice(11, 16)
 }
 </script>

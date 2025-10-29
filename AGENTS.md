@@ -38,3 +38,7 @@ These rules are mandatory for any code you add or modify in this repository. Fol
   - Avoid adding test‑only branches or timing hacks in runtime code.
 
 By contributing to this repo, you agree to follow these conventions. PRs that introduce `any` or type assertions without justification will be rejected.
+
+## Tooling Notes
+
+- When asked to "lint" the project, run both `pnpm run lint` **and** `pnpm exec nuxi typecheck` so Vue SFCs undergo TypeScript checking in addition to ESLint.

@@ -40,7 +40,11 @@ try {
   pending.value = false
 }
 
-const goToSession = (sessionId: number) => navigateTo(`/sessions/${sessionId}`)
+const goToSession = (session: Session) => {
+  const cinemaId = id
+  const movieId = session.movieId
+  return navigateTo(`/movies/${movieId}/cinemas/${cinemaId}/sessions/${session.id}`)
+}
 </script>
 
 <template>
@@ -57,7 +61,7 @@ const goToSession = (sessionId: number) => navigateTo(`/sessions/${sessionId}`)
       <section v-for="(list, date) in groupByDate(sessions)" :key="date" class="border-t border-zinc-700 pt-3 mt-3">
         <h3 class="font-semibold mb-2">{{ date }}</h3>
         <div class="flex flex-wrap gap-2">
-          <button v-for="s in list" :key="s.id" @click="goToSession(s.id)" class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800">
+          <button v-for="s in list" :key="s.id" @click="goToSession(s)" class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800">
             {{ (s.startAt || s.startTime || s.start_time || '').slice(11,16) }} — {{ s.movieName || s.movie?.title }}
           </button>
         </div>

@@ -22,7 +22,6 @@
 
 <script setup lang="ts">
 import type { Booking, Settings } from '~/schemas'
-import { normalizeBooking } from '~/utils/transformers'
 
 interface Props {
   booking: Booking
@@ -46,12 +45,10 @@ const emitPay = () => {
   }
 }
 
-const normalizedBooking = computed(() => normalizeBooking(props.booking))
-
-const ticketTitle = computed(() => normalizedBooking.value.movieName || normalizedBooking.value.movie?.title || '')
-const cinemaName = computed(() => normalizedBooking.value.cinemaName || normalizedBooking.value.cinema?.name || '')
+const ticketTitle = computed(() => props.booking.movieName || props.booking.movie?.title || '')
+const cinemaName = computed(() => props.booking.cinemaName || props.booking.cinema?.name || '')
 const sessionTime = computed(() => {
-  const startAt = normalizedBooking.value.startAt || normalizedBooking.value.time || ''
+  const startAt = props.booking.startAt || props.booking.time || ''
   return new Date(startAt).toLocaleString('ru-RU', { 
     hour: '2-digit', 
     minute: '2-digit', 
@@ -61,7 +58,7 @@ const sessionTime = computed(() => {
 })
 
 const seatInfo = computed(() => {
-  const seat = normalizedBooking.value.seats?.[0]
+  const seat = props.booking.seats?.[0]
   if (!seat) return ''
   
   if (typeof seat === 'string') {

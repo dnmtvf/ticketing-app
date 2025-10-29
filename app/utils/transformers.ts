@@ -1,105 +1,40 @@
-import type { Movie, Session, SessionDetail, Booking } from '~/schemas'
+import groupBy from 'lodash-es/groupBy'
+import sortBy from 'lodash-es/sortBy'
+import type { Movie, Session } from '~/schemas'
 
-const ABSOLUTE_URL_PATTERN = /^https?:\/\//i
-const DEFAULT_API_BASE = 'http://localhost:3022'
-
-const resolveApiBaseUrl = (fallback?: string): string => {
-  if (fallback) {
-    return fallback
-  }
-  try {
-    const { public: { apiBase } } = useRuntimeConfig()
-    return apiBase
-  } catch {
-    return DEFAULT_API_BASE
-  }
-}
-
-/**
- * Get full poster URL by prepending API host
- */
-export function getPosterUrl(posterPath: string | undefined, apiBase?: string): string | undefined {
-  if (!posterPath) {
-    return undefined
-  }
-
-  if (ABSOLUTE_URL_PATTERN.test(posterPath)) {
-    return posterPath
-  }
-
-  const baseUrl = resolveApiBaseUrl(apiBase)
-  try {
-    return new URL(posterPath, baseUrl).toString()
-  } catch {
-    return undefined
-  }
-}
-
-/**
- * Normalizes movie data to handle inconsistent backend field names
- * Ensures consistent shape across the application
- */
-export function normalizeMovie(movie: Movie, apiBase?: string): Movie {
-  const posterSource = movie.posterFullUrl ?? movie.posterImage
-  const resolvedPoster = getPosterUrl(posterSource, apiBase)
+export function normalizeMovie({ movie, apiBase }: { movie: Movie; apiBase: string }): Movie {
+  const posterFullUrl = new URL(movie.posterImage, apiBase).toString()
 
   return {
     ...movie,
-    posterFullUrl: resolvedPoster ?? movie.posterFullUrl // Full URL for images
+    posterFullUrl
   }
 }
 
-/**
- * Normalizes session data with consistent field mapping
- */
-export function normalizeSession(raw: unknown): Session {
-  const session = raw as Session
-  
-  return {
-    ...session
-    // No fallbacks needed - schema guarantees all fields exist
+const getSessionDateKey = (session: Session): string => {
+  const parsed = new Date(session.startTime)
+  if (!Number.isNaN(parsed.getTime())) {
+    const day = parsed.getDate().toString().padStart(2, '0')
+    const month = (parsed.getMonth() + 1).toString().padStart(2, '0')
+    return `${day}.${month}`
   }
+  return session.startTime
 }
 
-/**
- * Groups sessions by date for display
- */
-export function groupSessionsByDate(sessions: Session[]): Record<string, Session[]> {
-  const grouped: Record<string, Session[]> = {}
-  
-  for (const session of sessions) {
-    const normalizedSession = normalizeSession(session)
-    const date = (normalizedSession.startAt || normalizedSession.startTime || '').slice(0, 10)
-    
-    if (!grouped[date]) {
-      grouped[date] = []
+export function groupSessionsByDate<T extends Session>(sessions: T[]): {
+  grouped: Record<string, T[]>
+  dates: string[]
+} {
+  const grouped = groupBy(sessions, session => getSessionDateKey(session))
+  const dates = sortBy(Object.keys(grouped), key => {
+    const group = grouped[key] || []
+    const [record] = group
+    if (record) {
+      return new Date(record.startTime).getTime()
     }
-    grouped[date].push(normalizedSession)
-  }
-  
-  return grouped
+    return 0
+  })
+  return { grouped, dates }
 }
 
-/**
- * Normalizes booking data for consistent display
- */
-export function normalizeBooking(raw: unknown): Booking {
-  const booking = raw as Booking
-  
-  return {
-    ...booking
-    // No fallbacks needed - schema guarantees all fields exist
-  }
-}
 
-/**
- * Normalizes session detail data for seat selection
- */
-export function normalizeSessionDetail(raw: unknown): SessionDetail {
-  const detail = raw as SessionDetail
-  
-  return {
-    ...detail
-    // No fallbacks needed - schema guarantees all fields exist
-  }
-}

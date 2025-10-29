@@ -1,86 +1,106 @@
 <template>
-  <article aria-labelledby="movie-title">
-    <h1 id="movie-title" class="text-2xl font-semibold mb-4">Фильм</h1>
-    <div v-if="pending">Загрузка…</div>
-    <div v-else-if="error">{{ error }}</div>
-    <div v-else>
-      <MovieDetails :movie="movie" />
-      
-      <div v-for="date in dates" :key="date">
-        <SessionGroup 
-          :date="date" 
-          :sessions="sessions"
-          @go-to-session="goToSession"
-        />
-      </div>
-    </div>
-  </article>
+  <NuxtPage v-if="$route.path.includes('/cinemas')" />
+  <MovieSessionsContent
+    v-else
+    :movie="movie"
+    :dates="dates"
+    :sessions-by-date="sessionsByDate"
+    :pending="pending"
+    :error="errorMessage"
+    @go-to-session="goToSession"
+  />
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { z } from 'zod'
-import { MovieSchema, SessionSchema, CinemaSchema, type Movie, type Session } from '~/schemas'
-import MovieDetails from '~/components/movies/MovieDetails.vue'
-import SessionGroup from '~/components/movies/SessionGroup.vue'
+import { MovieSchema, SessionSchema, CinemaSchema, type Movie } from '~/schemas'
+import MovieSessionsContent from '~/components/movies/MovieSessionsContent.vue'
+import type { SessionWithCinema } from '~/types/movies'
 import { groupSessionsByDate, normalizeMovie } from '~/utils/transformers'
+
+type MovieSessionsData = {
+  movie: Movie | null
+  sessions: SessionWithCinema[]
+  parsingError: string | null
+}
 
 const { $api } = useNuxtApp()
 const { public: { apiBase } } = useRuntimeConfig()
 const route = useRoute()
 const id = String(route.params.id)
 
-const movie = ref<Movie | null>(null)
-const sessions = ref<Session[]>([])
-const pending = ref(true)
-const error = ref<string | null>(null)
+const { data: movieSessionsData, pending, error } = await useAsyncData<MovieSessionsData>(
+  `movie-${id}`,
+  async () => {
+    // NOTE: Backend lacks a /movies/{id} endpoint, so we fetch the list and filter client-side.
+    const [movies, sess, cinemas] = await Promise.all([
+      $api('/movies'),
+      $api(`/movies/${id}/sessions`),
+      $api('/cinemas')
+    ])
 
-try {
-  // Get movie details from movies list (since /movies/{id} doesn't exist)
-  const movies = await $api('/movies')
-  const moviesArray = z.array(MovieSchema).safeParse(movies)
-  
-  if (moviesArray.success) {
-    const normalizedMovies = moviesArray.data.map(movie => normalizeMovie(movie, apiBase))
-    // Find the movie in the list
-    movie.value = normalizedMovies.find(m => String(m.id) === id) || null
-  }
-  
-  // Get sessions and cinemas data
-  const [sess, cinemas] = await Promise.all([
-    $api(`/movies/${id}/sessions`),
-    $api('/cinemas')
-  ])
-  
-  const ps = z.array(SessionSchema).safeParse(sess)
-  const cs = z.array(CinemaSchema).safeParse(cinemas)
-  
-  if (ps.success && cs.success) {
-    sessions.value = ps.data.map(session => {
-      const cinema = cs.data.find(c => String(c.id) === String(session.cinemaId))
-      return {
-        ...session,
-        cinemaName: cinema?.name || `Кинотеатр ${session.cinemaId}`,
-        cinema: cinema
-      }
-    })
-  } else {
-    error.value = 'Ошибка загрузки сеансов'
-  }
-} catch {
-  error.value = 'Ошибка загрузки'
-} finally {
-  pending.value = false
-}
+    const movieParse = z.array(MovieSchema).safeParse(movies)
+    const sessionParse = z.array(SessionSchema).safeParse(sess)
+    const cinemaParse = z.array(CinemaSchema).safeParse(cinemas)
 
-const dates = computed(() => {
-  const grouped = groupSessionsByDate(sessions.value)
-  return Object.keys(grouped).sort()
+    let movie: Movie | null = null
+    let sessions: SessionWithCinema[] = []
+    let parsingError: string | null = null
+
+    if (movieParse.success) {
+      const rawMovie = movieParse.data.find(movieItem => String(movieItem.id) === id)
+      movie = rawMovie ? normalizeMovie({ movie: rawMovie, apiBase }) : null
+    } else {
+      parsingError = 'Не удалось обработать данные фильма'
+    }
+
+    if (sessionParse.success && cinemaParse.success) {
+      const cinemasById = Object.fromEntries(cinemaParse.data.map(c => [String(c.id), c]))
+
+      sessions = sessionParse.data.map(session => {
+        const cinema = cinemasById[String(session.cinemaId)] ?? {
+          id: session.cinemaId,
+          name: `Кинотеатр ${session.cinemaId}`
+        }
+
+        return {
+          ...session,
+          cinema
+        }
+      })
+    } else {
+      parsingError = parsingError ?? 'Ошибка загрузки сеансов'
+    }
+
+    return {
+      movie,
+      sessions,
+      parsingError
+    }
+  }
+)
+
+const movie = computed<Movie | null>(() => movieSessionsData.value?.movie ?? null)
+const sessions = computed<SessionWithCinema[]>(() => movieSessionsData.value?.sessions ?? [])
+const errorMessage = computed<string | null>(() => {
+  if (error.value?.message) {
+    return error.value.message
+  }
+  if (movieSessionsData.value?.parsingError) {
+    return movieSessionsData.value.parsingError
+  }
+  return null
 })
 
-const goToSession = (sessionId: number) => {
-  return navigateTo({
-    name: 'sessions-id',
-    params: { id: String(sessionId) }
-  })
+const groupedSessions = computed(() => groupSessionsByDate(sessions.value))
+
+const dates = computed(() => groupedSessions.value.dates)
+
+const sessionsByDate = computed(() => groupedSessions.value.grouped)
+
+const goToSession = ({ sessionId, cinemaId }: { sessionId: number; cinemaId: number }) => {
+  const movieId = String(route.params.id)
+  return navigateTo(`/movies/${movieId}/cinemas/${cinemaId}/sessions/${sessionId}`)
 }
 </script>

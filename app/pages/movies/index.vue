@@ -31,7 +31,7 @@ const { data: moviesData, pending, error } = await useAsyncData<Movie[]>(
       parsingError.value = 'Не удалось обработать данные фильмов'
       return []
     }
-    return parsed.data.map(movie => normalizeMovie(movie, apiBase))
+    return parsed.data.map(movie => normalizeMovie({ movie, apiBase }))
   }
 )
 

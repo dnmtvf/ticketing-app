@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const MovieSchema = z.object({
   id: z.number(),
   title: z.string(),
-  posterImage: z.string().optional(),  // API field name
+  posterImage: z.string(),  // API field name
   posterFullUrl: z.string().url().optional(), // Full image URL
   description: z.string().optional(),
   lengthMinutes: z.number(),  // API field name - this is the actual duration field

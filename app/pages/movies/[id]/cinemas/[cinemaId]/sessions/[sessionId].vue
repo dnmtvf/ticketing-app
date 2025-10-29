@@ -38,13 +38,15 @@
 
 <script setup lang="ts">
 import { SessionDetailSchema } from '~/schemas'
-import { normalizeSessionDetail } from '~/utils/transformers'
 import { useSeatSelection } from '~/composables/useSeatSelection'
+
+definePageMeta({
+  key: route => route.fullPath
+})
 
 const { $api } = useNuxtApp()
 const auth = useAuth()
 const route = useRoute()
-const id = String(route.params.id)
 
 // Use the seat selection composable
 const seatSelection = useSeatSelection()
@@ -52,22 +54,30 @@ const seatSelection = useSeatSelection()
 const pending = ref(true)
 const error = ref<string | null>(null)
 
-// Initialize session data
-try {
-  const sessionData = await $api(`/movieSessions/${id}`)
-  const parsed = SessionDetailSchema.safeParse(sessionData)
-  
-  if (parsed.success) {
-    const normalizedDetail = normalizeSessionDetail(parsed.data)
-    seatSelection.setSessionDetail(normalizedDetail)
-  } else {
-    throw new Error('Schema mismatch')
+const fetchSessionData = async (sessionId: string) => {
+  pending.value = true
+  error.value = null
+  try {
+    const sessionData = await $api(`/movieSessions/${sessionId}`)
+    const parsed = SessionDetailSchema.safeParse(sessionData)
+    
+    if (parsed.success) {
+      seatSelection.setSessionDetail(parsed.data)
+    } else {
+      throw new Error('Schema mismatch')
+    }
+  } catch {
+    error.value = 'Ошибка загрузки сеанса'
+  } finally {
+    pending.value = false
   }
-} catch {
-  error.value = 'Ошибка загрузки сеанса'
-} finally {
-  pending.value = false
 }
+
+watch(() => route.params.sessionId, (sessionId) => {
+  if (sessionId) {
+    fetchSessionData(String(sessionId))
+  }
+}, { immediate: true })
 
 // Computed properties from the composable
 const rows = computed(() => seatSelection.getSeatDimensions.value.rows)
@@ -90,7 +100,7 @@ const book = async () => {
   const toast = useToast()
   try {
     const seats = seatSelection.getSelectedSeatsForApi.value
-    await $api(`/movieSessions/${id}/bookings`, { 
+    await $api(`/movieSessions/${sessionId}/bookings`, { 
       method: 'POST', 
       body: { seats } 
     })
@@ -100,11 +110,10 @@ const book = async () => {
   } catch {
     // Refresh seat map on conflict/validation errors
     try {
-      const refreshed = await $api(`/movieSessions/${id}`)
+      const refreshed = await $api(`/movieSessions/${sessionId}`)
       const parsed = SessionDetailSchema.safeParse(refreshed)
       if (parsed.success) {
-        const normalizedDetail = normalizeSessionDetail(parsed.data)
-        seatSelection.setSessionDetail(normalizedDetail)
+        seatSelection.setSessionDetail(parsed.data)
       }
     } catch {}
     
