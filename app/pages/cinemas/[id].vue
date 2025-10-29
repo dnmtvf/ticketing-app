@@ -61,9 +61,14 @@ const goToSession = (session: Session) => {
       <section v-for="(list, date) in groupByDate(sessions)" :key="date" class="border-t border-zinc-700 pt-3 mt-3">
         <h3 class="font-semibold mb-2">{{ date }}</h3>
         <div class="flex flex-wrap gap-2">
-          <button v-for="s in list" :key="s.id" @click="goToSession(s)" class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800">
+          <BaseButton
+            v-for="s in list"
+            :key="s.id"
+            variant="outline"
+            @click="goToSession(s)"
+          >
             {{ (s.startAt || s.startTime || s.start_time || '').slice(11,16) }} — {{ s.movieName || s.movie?.title }}
-          </button>
+          </BaseButton>
         </div>
       </section>
     </div>

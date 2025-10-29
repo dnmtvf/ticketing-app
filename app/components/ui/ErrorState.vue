@@ -6,21 +6,21 @@
       </svg>
     </div>
     <p class="text-zinc-300 mb-4">{{ errorMessage }}</p>
-    <UButton 
+    <BaseButton
       v-if="showRetry"
-      variant="outline" 
+      variant="outline"
       color="rose"
       @click="handleRetry"
     >
       Попробовать снова
-    </UButton>
+    </BaseButton>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { NuxtError } from '#app'
 
-interface Props {
+type Props = {
   error?: string | NuxtError | null
   message?: string
   showRetry?: boolean

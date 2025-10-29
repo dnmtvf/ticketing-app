@@ -1,12 +1,10 @@
 <template>
-  <div>
-    <MovieTable 
-      :movies="movies" 
-      :pending="pending" 
-      :error="errorMessage"
-      @movie-select="viewSessions" 
-    />
-  </div>
+  <MovieTable 
+    :movies="movies" 
+    :pending="pending" 
+    :error="errorMessage"
+    @movie-select="viewSessions" 
+  />
 </template>
 
 <script setup lang="ts">

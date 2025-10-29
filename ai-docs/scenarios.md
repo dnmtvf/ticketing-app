@@ -86,8 +86,8 @@ API base: http://localhost:3022 (override via NUXT_PUBLIC_API_BASE if different)
 ## 7) Localization & UI
 - RU copy check (positive)
   - Confirm exact error strings and section headers as specified
-- Nuxt UI controls (positive)
-  - UForm/UInput/UButton present and interactive; toasts visible
+- UI controls (positive)
+  - Native HTML forms with Vuelidate validation; BaseButton components; vue-toastification notifications visible
 
 ---
 

@@ -1,18 +1,45 @@
 <template>
   <section aria-labelledby="register-title" class="max-w-md">
     <h1 id="register-title" class="text-2xl font-semibold mb-4">Регистрация</h1>
-    <UForm :state="form" @submit="onSubmit" class="grid gap-3">
-      <UFormGroup name="username" label="Логин" :error="v$.form.username.$error ? usernameError : ''">
-        <UInput v-model="form.username" placeholder="Введите логин" />
-      </UFormGroup>
-      <UFormGroup name="password" label="Пароль" :error="v$.form.password.$error ? passwordError : ''">
-        <UInput v-model="form.password" type="password" placeholder="Введите пароль" />
-      </UFormGroup>
-      <UFormGroup name="passwordConfirmation" label="Пароль" :error="v$.form.passwordConfirmation.$error ? 'Пароль не совпадает' : ''">
-        <UInput v-model="form.passwordConfirmation" type="password" placeholder="Подтвердите пароль" />
-      </UFormGroup>
-      <UButton :loading="auth.loading.value" type="submit">Зарегистрироваться</UButton>
-    </UForm>
+    <form @submit.prevent="onSubmit" class="grid gap-3">
+      <div>
+        <label for="username" class="block text-sm font-medium mb-1">Логин</label>
+        <input
+          id="username"
+          v-model="form.username"
+          type="text"
+          placeholder="Введите логин"
+          class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+          :class="{ 'border-rose-500': v$.form.username.$error }"
+        />
+        <p v-if="v$.form.username.$error" class="text-rose-400 text-sm mt-1">{{ usernameError }}</p>
+      </div>
+      <div>
+        <label for="password" class="block text-sm font-medium mb-1">Пароль</label>
+        <input
+          id="password"
+          v-model="form.password"
+          type="password"
+          placeholder="Введите пароль"
+          class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+          :class="{ 'border-rose-500': v$.form.password.$error }"
+        />
+        <p v-if="v$.form.password.$error" class="text-rose-400 text-sm mt-1">{{ passwordError }}</p>
+      </div>
+      <div>
+        <label for="passwordConfirmation" class="block text-sm font-medium mb-1">Подтверждение пароля</label>
+        <input
+          id="passwordConfirmation"
+          v-model="form.passwordConfirmation"
+          type="password"
+          placeholder="Подтвердите пароль"
+          class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+          :class="{ 'border-rose-500': v$.form.passwordConfirmation.$error }"
+        />
+        <p v-if="v$.form.passwordConfirmation.$error" class="text-rose-400 text-sm mt-1">Пароль не совпадает</p>
+      </div>
+      <BaseButton :loading="auth.loading.value" type="submit">Зарегистрироваться</BaseButton>
+    </form>
     <p class="mt-6 text-sm text-zinc-300">
       Если вы уже зарегистрированы <NuxtLink class="text-sky-400 underline" to="/login">войдите</NuxtLink>
     </p>
@@ -22,8 +49,10 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core'
 import { required, minLength, helpers, sameAs } from '@vuelidate/validators'
+import { useToast } from 'vue-toastification'
 
 const auth = useAuth()
+const toast = useToast()
 const form = reactive({ username: '', password: '', passwordConfirmation: '' })
 
 const hasUpper = helpers.regex('hasUpper', /[A-ZА-Я]/)
@@ -56,8 +85,7 @@ const onSubmit = async () => {
     passwordConfirmation: form.passwordConfirmation
   })
   if (ok) {
-    const toast = useToast()
-    toast.add({ title: 'Регистрация выполнена' })
+    toast.success('Регистрация выполнена')
     await navigateTo('/tickets')
   }
 }

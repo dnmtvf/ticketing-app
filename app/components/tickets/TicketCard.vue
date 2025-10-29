@@ -7,13 +7,13 @@
       <div>{{ seatInfo }}</div>
     </div>
     <div class="grow" />
-    <UButton 
-      v-if="showPayment" 
-      variant="outline" 
+    <BaseButton
+      v-if="showPayment"
+      variant="outline"
       @click="emitPay"
     >
       Оплатить
-    </UButton>
+    </BaseButton>
     <div v-if="countdownText" class="text-sky-400">
       Осталось {{ countdownText }}
     </div>
@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import type { Booking, Settings } from '~/schemas'
 
-interface Props {
+type Props = {
   booking: Booking
   settings: Settings | null
   showPayment?: boolean

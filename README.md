@@ -28,7 +28,9 @@ export NUXT_PUBLIC_API_BASE=http://localhost:8282
  - Test Agents init: `pnpm agents:init:vscode` (or `:claude`, `:opencode`)
 
 ## Tech
-- Nuxt 4, TypeScript, Tailwind CSS, Nuxt UI (UForm, UButton, Toast)
+- Nuxt 4, TypeScript, Tailwind CSS
+- Vuelidate for form validation
+- vue-toastification for notifications
 - Auth via cookies (credentials: include)
 - Zod schemas validate API responses
 - Vitest unit tests (auth validation, seat selection, countdown)

@@ -8,14 +8,14 @@
     >
       <div class="min-w-48">{{ cinema }}</div>
       <div class="flex flex-wrap gap-2">
-        <button 
-          v-for="session in sessionsForCinema(cinema)" 
-          :key="session.id" 
-          @click="emit('go-to-session', { sessionId: session.id, cinemaId: session.cinemaId })" 
-          class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800 cursor-pointer"
+        <BaseButton
+          v-for="session in sessionsForCinema(cinema)"
+          :key="session.id"
+          variant="outline"
+          @click="emit('go-to-session', { sessionId: session.id, cinemaId: session.cinemaId })"
         >
           {{ getSessionTime(session) }}
-        </button>
+        </BaseButton>
       </div>
     </div>
   </section>

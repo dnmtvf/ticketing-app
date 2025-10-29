@@ -15,12 +15,12 @@
     <td class="py-2">{{ `${lengthMinutes} мин` }}</td>
     <td class="py-2">{{ rating }}</td>
     <td class="py-2">
-      <button 
-        class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800 cursor-pointer" 
+      <BaseButton
+        variant="outline"
         @click="$emit('movie-select', movie.id)"
       >
         Посмотреть сеансы
-      </button>
+      </BaseButton>
     </td>
   </tr>
 </template>

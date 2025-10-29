@@ -1,106 +1,87 @@
 <template>
-  <section aria-labelledby="session-title">
-    <h1 id="session-title" class="text-2xl font-semibold mb-4">Сеанс</h1>
-    <div v-if="pending">Загрузка…</div>
-    <div v-else-if="error">{{ error }}</div>
-    <div v-else class="grid gap-4">
-      <div class="grid gap-1 text-zinc-300">
-        <div>Фильм: {{ seatSelection.sessionDetail?.movieName || seatSelection.sessionDetail?.movie?.title }}</div>
-        <div>Кинотеатр: {{ seatSelection.sessionDetail?.cinemaName || seatSelection.sessionDetail?.cinema?.name }}</div>
-        <div>Время: {{ String(seatSelection.sessionDetail?.startAt || seatSelection.sessionDetail?.startTime || '').replace('T', ' ').slice(0,16) }}</div>
-      </div>
-
-      <div class="grid gap-2">
-        <div class="grid items-center gap-2" v-for="r in rows" :key="r" :style="{ gridTemplateColumns: `80px repeat(${cols}, 28px)` }">
-          <div class="text-zinc-400">ряд {{ r }}</div>
-          <button
-            v-for="c in cols"
-            :key="c"
-            class="w-6 h-6 border-2 border-zinc-400 data-[booked=true]:opacity-40 data-[booked=true]:border-rose-400 data-[selected=true]:bg-sky-900 data-[selected=true]:border-sky-300"
-            :data-booked="isBooked(r,c)"
-            :data-selected="isSelected(r,c)"
-            @click="toggleSeat(r,c)"
-            :disabled="isBooked(r,c)"
-            :aria-pressed="isSelected(r,c)"
-            :aria-label="`Ряд ${r}, место ${c}`"
-          />
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <UButton color="primary" :disabled="!selectedSeats.length" @click="book">
-          Забронировать ({{ selectedSeats.length }})
-        </UButton>
-      </div>
-    </div>
-  </section>
+  <SessionSeatSelection
+    v-if="session"
+    :session="session"
+    :pending="pending"
+    :error="errorMessage"
+    @book="handleBooking"
+  />
 </template>
 
 <script setup lang="ts">
-import { SessionDetailSchema } from '~/schemas'
-import { useSeatSelection } from '~/composables/useSeatSelection'
-
-definePageMeta({
-  key: route => route.fullPath
-})
+import { SessionDetailSchema, MovieSchema, CinemaSchema } from '~/schemas'
+import { z } from 'zod'
+import SessionSeatSelection from '~/components/sessions/SessionSeatSelection.vue'
+import type { EnrichedSession } from '~/types/sessions'
 
 const { $api } = useNuxtApp()
 const auth = useAuth()
 const route = useRoute()
 
-// Use the seat selection composable
-const seatSelection = useSeatSelection()
+const parsingError = ref<string | null>(null)
 
-const pending = ref(true)
-const error = ref<string | null>(null)
+const { data: sessionData, pending, error } = await useAsyncData<EnrichedSession | null>(
+  `session-${route.params.sessionId}`,
+  async () => {
+    // NOTE: Backend lacks a /movies/{id} endpoint, so we fetch the list and filter client-side.
+    const [sessionData, movies, cinemas] = await Promise.all([
+      $api(`/movieSessions/${route.params.sessionId}`),
+      $api('/movies'),
+      $api('/cinemas')
+    ])
 
-const fetchSessionData = async (sessionId: string) => {
-  pending.value = true
-  error.value = null
-  try {
-    const sessionData = await $api(`/movieSessions/${sessionId}`)
-    const parsed = SessionDetailSchema.safeParse(sessionData)
-    
-    if (parsed.success) {
-      seatSelection.setSessionDetail(parsed.data)
-    } else {
-      throw new Error('Schema mismatch')
+    const sessionParse = SessionDetailSchema.safeParse(sessionData)
+    const moviesParse = z.array(MovieSchema).safeParse(movies)
+    const cinemasParse = z.array(CinemaSchema).safeParse(cinemas)
+
+    if (!sessionParse.success) {
+      parsingError.value = 'Не удалось обработать данные сеанса'
+      return null
     }
-  } catch {
-    error.value = 'Ошибка загрузки сеанса'
-  } finally {
-    pending.value = false
+
+    if (!moviesParse.success || !cinemasParse.success) {
+      parsingError.value = 'Не удалось обработать данные фильма или кинотеатра'
+      return null
+    }
+
+    const movie = moviesParse.data.find(m => m.id === sessionParse.data.movieId)
+    const cinema = cinemasParse.data.find(c => c.id === sessionParse.data.cinemaId)
+
+    // If we can't find movie/cinema data, we shouldn't show the session at all
+    if (!movie || !cinema) {
+      parsingError.value = 'Не удалось найти данные фильма или кинотеатра'
+      return null
+    }
+
+    return {
+      ...sessionParse.data,
+      movieName: movie.title,
+      cinemaName: cinema.name
+    }
   }
-}
+)
 
-watch(() => route.params.sessionId, (sessionId) => {
-  if (sessionId) {
-    fetchSessionData(String(sessionId))
+const session = computed(() => sessionData.value || undefined)
+const errorMessage = computed<string | null>(() => {
+  if (error.value?.message) {
+    return error.value.message
   }
-}, { immediate: true })
+  if (parsingError.value) {
+    return parsingError.value
+  }
+  return null
+})
 
-// Computed properties from the composable
-const rows = computed(() => seatSelection.getSeatDimensions.value.rows)
-const cols = computed(() => seatSelection.getSeatDimensions.value.cols)
-const isBooked = (r: number, c: number) => seatSelection.isSeatBooked(r, c)
-const isSelected = (r: number, c: number) => seatSelection.isSeatSelected(r, c)
-const selectedSeats = computed(() => seatSelection.selectedSeats)
-
-const toggleSeat = (r: number, c: number) => {
-  seatSelection.toggleSeat(r, c)
-}
-
-const book = async () => {
+const handleBooking = async (seats: Array<{ rowNumber: number; seatNumber: number }>) => {
   if (!auth.loggedIn.value) {
     return navigateTo({ path: '/login', query: { redirect: route.fullPath } })
   }
   
-  if (!selectedSeats.value.length) return
+  if (!seats.length) return
   
   const toast = useToast()
   try {
-    const seats = seatSelection.getSelectedSeatsForApi.value
-    await $api(`/movieSessions/${sessionId}/bookings`, { 
+    await $api(`/movieSessions/${route.params.sessionId}/bookings`, { 
       method: 'POST', 
       body: { seats } 
     })
@@ -108,16 +89,8 @@ const book = async () => {
     toast.add({ title: 'Места забронированы' })
     await navigateTo('/tickets')
   } catch {
-    // Refresh seat map on conflict/validation errors
-    try {
-      const refreshed = await $api(`/movieSessions/${sessionId}`)
-      const parsed = SessionDetailSchema.safeParse(refreshed)
-      if (parsed.success) {
-        seatSelection.setSessionDetail(parsed.data)
-      }
-    } catch {}
-    
-    toast.add({ title: 'Не удалось забронировать места', color: 'rose' })
+    await $api(`/movieSessions/${route.params.sessionId}`)
+    toast.add({ title: 'Не удалось забронировать места', color: 'error' })
   }
 }
 </script>

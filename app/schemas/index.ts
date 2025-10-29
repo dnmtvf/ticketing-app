@@ -33,11 +33,10 @@ export const SessionDetailSchema = z.object({
     z.object({ rows: z.number(), cols: z.number().optional(), seatsPerRow: z.number().optional() }),
     z.array(z.array(z.unknown()))
   ]),
-  bookedSeats: z.array(z.union([
-    z.string(),
-    z.object({ row: z.number(), col: z.number() }),
-    z.object({ rowNumber: z.number(), seatNumber: z.number() })
-  ])).default([])
+  bookedSeats: z.array(z.object({
+    rowNumber: z.number(),
+    seatNumber: z.number()
+  })).default([])
 })
 
 export const BookingSchema = z.object({

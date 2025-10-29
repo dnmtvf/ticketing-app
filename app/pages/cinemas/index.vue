@@ -36,7 +36,7 @@ const viewSessions = (id: number) => navigateTo(`/cinemas/${id}`)
         <tr v-for="c in state.cinemas" :key="c.id" class="border-b border-zinc-800">
           <td class="py-2">{{ c.name }}</td>
           <td class="py-2">{{ c.address }}</td>
-          <td class="py-2"><button class="px-3 py-1 rounded border border-zinc-600 hover:bg-zinc-800" @click="viewSessions(c.id)">Посмотреть сеансы</button></td>
+          <td class="py-2"><BaseButton @click="viewSessions(c.id)">Посмотреть сеансы</BaseButton></td>
         </tr>
       </tbody>
     </table>

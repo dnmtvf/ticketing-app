@@ -7,17 +7,17 @@
     </div>
     <h3 class="text-lg font-medium text-zinc-200 mb-2">{{ title }}</h3>
     <p class="text-zinc-400 mb-6 max-w-sm">{{ message }}</p>
-    <UButton 
+    <BaseButton
       v-if="showAction"
       @click="emitAction"
     >
       {{ actionText }}
-    </UButton>
+    </BaseButton>
   </div>
 </template>
 
 <script setup lang="ts">
-interface Props {
+type Props = {
   title?: string
   message?: string
   icon?: 'ticket' | 'movie' | 'cinema' | 'search' | 'default'
